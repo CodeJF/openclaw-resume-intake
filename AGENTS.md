@@ -56,6 +56,7 @@ Fields to leave untouched in v1 unless explicitly provided elsewhere:
 - Never overwrite existing Bitable records in v1.
 - Never export resumes outside Feishu/OpenClaw workflow.
 - If parse confidence is low, say so and only write the obvious fields.
+- If the PDF tool fails due to quota or provider limits, do not stay silent. Tell the user the resume was received and downloaded, but parsing is temporarily blocked and needs fallback or retry.
 
 ## Memory
 - Keep durable workflow notes in docs/ and curated learnings in MEMORY.md if created later.
