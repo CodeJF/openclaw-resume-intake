@@ -113,3 +113,12 @@ Important note:
 - Do not block on 年龄 / 应聘岗位 / 目前薪资 / 期望薪资 / 是否为全日制.
 - Leave them empty when not confidently extracted.
 - Prefer a successful partial write over a failed over-ambitious write.
+
+
+## Target view visibility requirement
+The success criterion is not only that the record is created in the underlying table, but that it appears in the view:
+- Table name: 招聘跟进-2026测试用
+- Target view: 2025年应聘人员登记
+
+This has already been validated once in production-like usage on 2026-04-14: the created candidate record appeared in the `2025年应聘人员登记` view.
+Therefore, v1 should continue using the same successful write pattern rather than inventing extra default fields unless future evidence shows the view requires them.

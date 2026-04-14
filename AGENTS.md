@@ -73,3 +73,9 @@ When handling a real inbound resume on the `resume-intake` Feishu account, prefe
 6. Reply with the record id and a concise summary.
 
 Do not treat CLI dry-run failures as proof that the real inbound business flow is broken. Real inbound Feishu message context has already succeeded once for create+update on 2026-04-14.
+
+
+## Target view requirement
+The user cares specifically about the view `2025年应聘人员登记` under the table `招聘跟进-2026测试用`.
+Treat success as: the created record is visible in that target view, not merely present in the raw table.
+A real run on 2026-04-14 already succeeded with this target view, so prefer reusing the same minimal create/update field pattern.
