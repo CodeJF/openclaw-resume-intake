@@ -1,0 +1,65 @@
+# Resume Intake Spec v1
+
+## Environment
+- Host: Alibaba Cloud server
+- OpenClaw state dir: /root/.openclaw
+- Workspace: /root/.openclaw/workspace-resume-intake
+- Default Feishu appId: cli_a948e348d13d9cd4
+
+## Product goal
+When a Feishu user uploads a PDF resume in chat, the agent should:
+1. require user OAuth if not yet authorized,
+2. parse the resume after authorization,
+3. create one new record in the target Feishu Bitable using the current user's identity.
+
+## Target view fields
+- 应聘者姓名
+- 年龄
+- 🛎 重复人选提醒（系统自动判断）
+- 应聘岗位
+- 需求部门
+- 简历渠道
+- 来源
+- 最新招聘进度状态
+- 联系方式
+- 学历
+- 毕业院校
+- 专业
+- 是否为全日制
+- 最近一家公司名称
+- 目前薪资
+- 期望薪资
+- 附件
+- 📋 背调信息记录
+- 📝未邀约/到面原因
+- 📝 备注
+
+## Write policy for v1
+Only attempt to fill:
+- 应聘者姓名
+- 年龄
+- 应聘岗位
+- 联系方式
+- 学历
+- 毕业院校
+- 专业
+- 是否为全日制
+- 最近一家公司名称
+- 目前薪资
+- 期望薪资
+- 附件
+
+Leave all other fields empty in v1.
+
+## Data policy
+- Create only. No update.
+- No automatic dedupe write-back.
+- No invented values.
+- Missing values stay empty.
+
+## Pending implementation inputs
+Before production use, verify on the live Bitable:
+- app_token
+- table_id for the underlying table of the target view
+- field types for each writable field
+- attachment upload path/mechanism supported by the current toolchain
