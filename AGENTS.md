@@ -98,3 +98,20 @@ Allowed write actions in v1:
 Before any write, mentally check:
 - Am I creating a new app or a new table? If yes, stop: that is a bug.
 - Am I writing to the exact existing app_token and table_id above? If not, stop.
+
+
+## Absolute prohibition on table/app creation tools
+This workspace must never call these tools in any circumstance:
+- `feishu_bitable_app`
+- `feishu_bitable_app_table`
+
+Reason: even listing or reasoning around app/table creation has previously led the model into creating a wrong table.
+For this workspace, table/app discovery is already settled and must not be re-derived at runtime.
+
+Only these Bitable tools are allowed for business writes:
+- `feishu_bitable_app_table_record.create`
+- `feishu_bitable_app_table_record.update`
+
+If the workflow cannot confidently proceed using the fixed target below, it must stop and ask for human intervention rather than trying to discover or create anything:
+- `app_token = Ft4cbSinbaxhOusgmzNcvwDUnWh`
+- `table_id = tblv3Pfr8Psw9Jr1`

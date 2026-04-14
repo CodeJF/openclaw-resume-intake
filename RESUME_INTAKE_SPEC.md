@@ -135,3 +135,22 @@ Correct target for all writes:
 
 The workflow must never attempt to infer or create a table name from the business label.
 The business label is not an instruction to create a new table.
+
+
+## Runtime tool restriction for bug prevention
+At runtime, the workflow must not call `feishu_bitable_app` or `feishu_bitable_app_table` at all.
+This is a hard restriction to prevent accidental table creation.
+
+The runtime may only use the pre-fixed target identifiers:
+- app_token: Ft4cbSinbaxhOusgmzNcvwDUnWh
+- table_id: tblv3Pfr8Psw9Jr1
+
+Allowed Bitable runtime actions:
+- record.create
+- record.update
+
+Forbidden runtime behavior:
+- create app
+- create table
+- list/search app or table as a precursor to writing
+- infer a new table from the label `2025年应聘人员登记`
