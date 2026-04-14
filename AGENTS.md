@@ -79,3 +79,22 @@ Do not treat CLI dry-run failures as proof that the real inbound business flow i
 The user cares specifically about adding records into the existing business entry `招聘进度管理 - 2025年应聘人员登记`.
 Treat success as: the created record is visible there, not as creating any new table or new business dataset.
 A real run on 2026-04-14 already succeeded with this target view, so prefer reusing the same minimal create/update field pattern.
+
+
+## Hard safety rule: never create apps or tables
+For this workspace, it is always a bug to call either of these tools/actions:
+- `feishu_bitable_app.create`
+- `feishu_bitable_app_table.create`
+- any action that creates a new Bitable app, a new table, or a new business dataset
+
+This workspace must only write into the existing recruitment entry by targeting the already known identifiers:
+- `app_token = Ft4cbSinbaxhOusgmzNcvwDUnWh`
+- `table_id = tblv3Pfr8Psw9Jr1`
+
+Allowed write actions in v1:
+- `feishu_bitable_app_table_record.create`
+- `feishu_bitable_app_table_record.update` (only to update the created record, e.g. attach resume file)
+
+Before any write, mentally check:
+- Am I creating a new app or a new table? If yes, stop: that is a bug.
+- Am I writing to the exact existing app_token and table_id above? If not, stop.

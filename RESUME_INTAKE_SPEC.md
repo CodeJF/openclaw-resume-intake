@@ -121,3 +121,17 @@ The success criterion is not only that the record is created in the underlying t
 
 This has already been validated once in production-like usage on 2026-04-14: the created candidate record appeared in the `2025年应聘人员登记` view.
 Therefore, v1 should continue using the same successful write pattern rather than inventing extra default fields unless future evidence shows that this existing target entry requires them.
+
+
+## Bug fix requirement: no accidental table creation
+A bug was observed on 2026-04-14 where the agent incorrectly called `feishu_bitable_app_table.create` and created a new table named `应聘人员登记`, then wrote records into the wrong `table_id`.
+
+This is forbidden behavior.
+
+Correct target for all writes:
+- app_token: Ft4cbSinbaxhOusgmzNcvwDUnWh
+- table_id: tblv3Pfr8Psw9Jr1
+- business target: existing entry `招聘进度管理 - 2025年应聘人员登记`
+
+The workflow must never attempt to infer or create a table name from the business label.
+The business label is not an instruction to create a new table.
