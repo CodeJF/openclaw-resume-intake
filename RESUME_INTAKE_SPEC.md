@@ -63,3 +63,13 @@ Before production use, verify on the live Bitable:
 - table_id for the underlying table of the target view
 - field types for each writable field
 - attachment upload path/mechanism supported by the current toolchain
+
+
+## Confirmed live metadata (2026-04-14)
+- Target bitable app_token: Ft4cbSinbaxhOusgmzNcvwDUnWh
+- Target table_id: tblv3Pfr8Psw9Jr1
+- Total views on the table: 4
+- Total fields on the table: 40
+- Live inbound route verified: feishu account `resume-intake` -> agent `resume-intake`
+- Live attachment download verified to /root/.openclaw/media/inbound/
+- Current blocker: pdf tool hit Gemini quota 429; add fallback PDF model path before next live test.
