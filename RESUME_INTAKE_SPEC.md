@@ -117,8 +117,7 @@ Important note:
 
 ## Target view visibility requirement
 The success criterion is not only that the record is created in the underlying table, but that it appears in the view:
-- Table name: 招聘跟进-2026测试用
-- Target view: 2025年应聘人员登记
+- Business target: 在现有的「招聘进度管理 - 2025年应聘人员登记」中新增记录
 
 This has already been validated once in production-like usage on 2026-04-14: the created candidate record appeared in the `2025年应聘人员登记` view.
-Therefore, v1 should continue using the same successful write pattern rather than inventing extra default fields unless future evidence shows the view requires them.
+Therefore, v1 should continue using the same successful write pattern rather than inventing extra default fields unless future evidence shows that this existing target entry requires them.
