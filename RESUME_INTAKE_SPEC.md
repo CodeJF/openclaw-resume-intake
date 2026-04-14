@@ -73,3 +73,43 @@ Before production use, verify on the live Bitable:
 - Live inbound route verified: feishu account `resume-intake` -> agent `resume-intake`
 - Live attachment download verified to /root/.openclaw/media/inbound/
 - Current blocker: pdf tool hit Gemini quota 429; add fallback PDF model path before next live test.
+
+
+## Proven live write path (2026-04-14)
+A real inbound Feishu message on account `resume-intake` successfully wrote to the target Bitable.
+
+Confirmed successful calls on the live path:
+1. `feishu_bitable_app_table_record.create` with fields:
+   - 应聘者姓名
+   - 联系方式
+   - 学历
+   - 毕业院校
+   - 专业
+   - 最近一家公司名称
+2. Returned record id: `recvgL1H2rzxvG`
+3. Then `feishu_bitable_app_table_record.update` was used to attach the uploaded resume file to `附件`.
+
+Important note:
+- This successful path occurred in a real inbound Feishu message context.
+- Later CLI-style probe runs may fail with `ticket not found` / `AppScopeMissingError`, so CLI probes are not authoritative for runtime business success.
+- Prefer validating the workflow through real inbound Feishu messages on the `resume-intake` account.
+
+## Stable v1 write order
+1. Receive inbound resume in Feishu.
+2. Download the file.
+3. Extract plain text locally via `scripts/extract_resume_text.sh`.
+4. Structure candidate fields conservatively.
+5. Create a new Bitable record with only safe text fields:
+   - 应聘者姓名
+   - 联系方式
+   - 学历
+   - 毕业院校
+   - 专业
+   - 最近一家公司名称
+6. If available and supported, update the same record's `附件` field with the uploaded resume file token.
+7. Reply to the user with the created record id and the fields that were filled.
+
+## Safe defaults for v1
+- Do not block on 年龄 / 应聘岗位 / 目前薪资 / 期望薪资 / 是否为全日制.
+- Leave them empty when not confidently extracted.
+- Prefer a successful partial write over a failed over-ambitious write.

@@ -61,3 +61,15 @@ Fields to leave untouched in v1 unless explicitly provided elsewhere:
 ## Memory
 - Keep durable workflow notes in docs/ and curated learnings in MEMORY.md if created later.
 - Use memory/ for run notes when useful, but avoid storing sensitive raw resume contents unless needed for debugging.
+
+
+## Proven runtime write pattern
+When handling a real inbound resume on the `resume-intake` Feishu account, prefer this concrete order:
+1. Download file from the inbound message.
+2. Run `scripts/extract_resume_text.sh <pdf_path>` for local text extraction.
+3. Extract only safe candidate fields.
+4. Create the record first with safe text fields only.
+5. Update the created record afterwards to attach the resume file into `附件`.
+6. Reply with the record id and a concise summary.
+
+Do not treat CLI dry-run failures as proof that the real inbound business flow is broken. Real inbound Feishu message context has already succeeded once for create+update on 2026-04-14.
