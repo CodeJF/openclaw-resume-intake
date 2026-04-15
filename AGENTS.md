@@ -159,3 +159,8 @@ v1 允许的写动作：
 - 传入 `--pdf-path`：已下载好的 PDF 路径
 - 传入 `--work-dir`：本次处理工作目录
 - 在 `work_dir` 下固定生成 `resume.txt` 和 `fields.json`
+
+
+## 写入失败后的用户回复
+如果多维表格 create/update 返回错误，不要沉默。必须立即回复飞书用户，说明失败步骤与错误摘要，再决定是否继续下一步。
+详见：`docs/ERROR_REPLY_RULE.md`

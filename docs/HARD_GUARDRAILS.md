@@ -64,3 +64,8 @@ python3 scripts/guarded_bitable_write.py resume_intake_v1 create examples/genera
 
 ## 统一入口补充
 在当前简历录入场景中，收到 PDF 简历后，优先走 `scripts/resume_intake_pipeline.py`，避免运行时随意拆步骤。
+
+
+## 失败后必须回包
+如果写入失败，先回复用户，再决定是否重试或等待确认。
+详见：`docs/ERROR_REPLY_RULE.md`

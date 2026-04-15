@@ -24,3 +24,8 @@ python3 scripts/resume_intake_pipeline.py --target-key resume_intake_v1 --resume
 ## 路径补充
 当前统一入口通过 `--work-dir` 固定中间产物位置，不再要求运行时自己猜文本文件和字段 JSON 的路径。
 详见：`docs/PIPELINE_PATHS.md`
+
+
+## 失败可见性
+统一入口相关步骤若失败，不应沉默，必须尽快把错误反馈给用户。
+详见：`docs/ERROR_REPLY_RULE.md`

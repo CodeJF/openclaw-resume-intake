@@ -201,3 +201,8 @@ python3 scripts/guarded_bitable_write.py resume_intake_v1 create examples/genera
 并在 `work_dir` 下固定生成：
 - `resume.txt`
 - `fields.json`
+
+
+## 写入失败处理
+如果 record.create 或 record.update 返回错误，必须立即向用户反馈失败原因，不允许静默卡住。
+详见：`docs/ERROR_REPLY_RULE.md`

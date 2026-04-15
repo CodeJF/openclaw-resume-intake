@@ -85,12 +85,23 @@ def pick_fulltime(text: str) -> str:
 
 def pick_latest_company(text: str) -> str:
     m = re.search(r"(?:最近一家公司|最近公司|现公司|就职于)[:：\s]+([^\n]{2,40})", text)
+    if m:
+        return m.group(1).strip()
+    m = re.search(r"([\u4e00-\u9fa5A-Za-z（）()·]{2,40}有限公司)\s+采购专员", text)
     return m.group(1).strip() if m else ""
 
 
 def pick_salary(text: str, label: str) -> str:
     m = re.search(label + r"[:：\s]+([^\n]{1,30})", text)
-    return m.group(1).strip() if m else ""
+    if not m:
+        return ""
+    value = m.group(1).strip()
+    # 保守策略：如果不是明确数字/区间薪资，就留空，避免 NumberFieldConvFail
+    if any(tok in value for tok in ["面议", "保密", "详谈"]):
+        return ""
+    if re.search(r"\d", value):
+        return value
+    return ""
 
 
 def pick_position(text: str) -> str:
