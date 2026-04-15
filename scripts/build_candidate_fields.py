@@ -20,8 +20,9 @@ SAFE_KEYS = [
 ]
 
 DEGREE_WORDS = ["博士", "硕士", "本科", "大专", "中专", "高中"]
-FULLTIME_WORDS = [(r"全日制", "是"), (r"非全日制|成人教育|自考|函授", "否")]
-STOP_LABELS = ["意向城市", "期望薪资", "电话", "邮箱", "性别", "年龄", "现所在地", "最高学历"]
+FULLTIME_WORDS = [(r"非全日制|成人教育|自考|函授", "否"), (r"全日制|统招", "是")]
+STOP_LABELS = ["意向城市", "期望薪资", "电话", "邮箱", "性别", "年龄", "现所在地", "最高学历", "求职类型", "到岗时间"]
+COMPANY_SUFFIXES = r"(?:有限公司|股份有限公司|科技有限公司|集团股份有限公司|集团有限公司|实业有限公司|有限责任公司)"
 
 
 def pick_name(text: str) -> str:
@@ -54,9 +55,16 @@ def pick_contact(text: str) -> str:
 
 
 def pick_age(text: str) -> str:
-    m = re.search(r"年龄[:：\s]+(\d{2})", text)
-    if m:
-        return m.group(1)
+    patterns = [
+        r"年龄[:：\s]+(\d{2})",
+        r"(\d{2})岁",
+        r"男\s*[|｜/]\s*(\d{2})岁",
+        r"女\s*[|｜/]\s*(\d{2})岁",
+    ]
+    for pat in patterns:
+        m = re.search(pat, text)
+        if m:
+            return m.group(1)
     return ""
 
 
