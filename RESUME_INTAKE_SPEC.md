@@ -42,3 +42,8 @@
 ## 正式执行链要求
 真实执行链必须遵守：create -> upload pdf -> get file_token -> update 附件 -> reply。
 任何在 create 成功后直接结束并回复用户的行为，都视为流程错误。
+
+
+## 正式身份模型
+当前正式录入应优先走 OpenClaw 的 Feishu 用户态工具链。
+脚本层负责 PDF 提取、字段构造与受保护 payload 生成，不应默认自行用 tenant token 直连 OpenAPI 执行写入。

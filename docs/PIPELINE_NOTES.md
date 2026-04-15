@@ -7,16 +7,18 @@
 建议使用：
 
 ```bash
-python3 scripts/resume_intake.py --target-key resume_intake_v1 --pdf-path <pdf_path> --work-dir <work_dir>
+python3 scripts/resume_intake_tool_plan.py --target-key resume_intake_v1 --pdf-path <pdf_path> --work-dir <work_dir>
 ```
 
 ## 这个统一入口做什么
 1. 调用 `scripts/extract_resume_text.py` 从 PDF 提取文本
 2. 调用 `scripts/build_candidate_fields.py` 生成字段 JSON
-3. 创建主记录
-4. 上传原始 PDF 获取 `file_token`
-5. 更新 `附件` 字段
-6. 按完整成功 / 部分成功 / 失败返回结果
+3. 生成受保护的 create payload
+4. 由 agent 使用 Feishu 用户态工具执行 create
+5. 上传原始 PDF 获取 `file_token`
+6. 生成受保护的附件 update payload
+7. 由 agent 使用 Feishu 用户态工具执行 update
+8. 按完整成功 / 部分成功 / 失败返回结果
 
 ## 约束边界
 - 这是 workspace 级的标准处理入口

@@ -33,3 +33,8 @@
 
 ## 正式运行要求
 附件补传不是建议步骤，而是 create 成功后的必经步骤。
+
+
+## 身份模型说明
+正式生产链路应优先使用 Feishu 用户态工具链执行 create / upload / update。
+不要把 tenant-token 直连 OpenAPI 当作默认正式路径。
