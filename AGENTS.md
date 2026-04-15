@@ -149,3 +149,10 @@ See also: `docs/TARGETS.md` for how to register future Bitable targets safely.
 - 目标多维表格、表/视图、target_key、字段映射、是否新增/更新等，只要不明确，就先问。
 - 所有这类流程约束与记忆内容统一使用中文记录。
 - 详见：`docs/确认优先规则.md`
+
+
+## Target 注册流程
+- 对于尚未注册的多维表格目标，先确认用户要写入哪个目标。
+- 目标明确后，可使用 `python3 scripts/register_bitable_target.py --spec <spec_json>` 安全注册。
+- 注册脚本不创建 app/table，只负责检查信息完整性并写入 `config/bitable-targets.json`。
+- 详见：`docs/TARGET_ONBOARDING.md`

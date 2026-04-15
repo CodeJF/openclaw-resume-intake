@@ -70,3 +70,8 @@ This prevents runtime drift where a model might:
 ## 确认优先补充规则
 如果用户尚未明确要写入哪个多维表格，不得进入 target 注册流程；必须先向用户确认。
 详见：`docs/确认优先规则.md`
+
+
+## 自动化注册补充
+除了手动按模板登记，也可以通过 `scripts/register_bitable_target.py` 按 spec 文件安全写入配置。
+详见：`docs/TARGET_ONBOARDING.md`

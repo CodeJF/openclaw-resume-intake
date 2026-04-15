@@ -1,0 +1,8 @@
+{
+  "target_key": "resume_intake_v2",
+  "business_label": "招聘进度管理 - 2026年应聘人员登记",
+  "bitable_name": "招聘进度管理",
+  "table_or_view_name": "2026年应聘人员登记",
+  "app_token": "app_xxx",
+  "table_id": "tbl_xxx"
+}
