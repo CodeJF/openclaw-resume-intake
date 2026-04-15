@@ -121,3 +121,11 @@ If the workflow cannot confidently proceed using the fixed target below, it must
 - Before any Bitable write, verify the runtime target matches that file exactly.
 - If a step would require `feishu_bitable_app` or `feishu_bitable_app_table`, stop immediately; this workspace must fail closed instead of discovering or creating anything.
 - Do not derive table names from `招聘进度管理` or `2025年应聘人员登记`; those are business labels, not creation instructions.
+
+
+## Executable guard
+Before any runtime Bitable write, validate the intended call with:
+- `python3 scripts/assert_bitable_target.py check-write feishu_bitable_app_table_record create <app_token> <table_id>`
+- or `python3 scripts/assert_bitable_target.py check-write feishu_bitable_app_table_record update <app_token> <table_id>`
+
+If the script prints `DENY:`, stop immediately.
