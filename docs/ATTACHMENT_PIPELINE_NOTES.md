@@ -18,3 +18,7 @@ python3 scripts/resume_intake_attachment_pipeline.py --target-key resume_intake_
 - 当前先实现标准链路入口和动作顺序
 - 还没有把它强绑进真实线上自动执行
 - 仍然遵守：不确定先问，真实线上数据不直接乱写
+
+
+## 运行时约束补充
+该附件链路不是仅供参考，真实运行时应在 create 成功后继续按此顺序执行。

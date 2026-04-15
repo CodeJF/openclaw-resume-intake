@@ -37,3 +37,8 @@
 - create 成功 + 附件 update 成功 = 完整成功
 - create 成功 + 附件 update 失败 = 部分成功
 - create 成功 + 未执行附件补传 = 流程不完整，视为 bug
+
+
+## 正式执行链要求
+真实执行链必须遵守：create -> upload pdf -> get file_token -> update 附件 -> reply。
+任何在 create 成功后直接结束并回复用户的行为，都视为流程错误。

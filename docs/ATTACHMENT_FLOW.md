@@ -29,3 +29,7 @@
 
 ## 标准入口补充
 可先通过 `scripts/resume_intake_attachment_pipeline.py` 输出附件补传的标准动作顺序。
+
+
+## 正式运行要求
+附件补传不是建议步骤，而是 create 成功后的必经步骤。
