@@ -28,3 +28,12 @@
 ## 附件补传标准链路
 当前附件链路的标准顺序为：upload -> file_token -> guarded attachment update -> record.update。
 可通过 `scripts/resume_intake_attachment_pipeline.py` 查看标准动作顺序。
+
+
+## create 后不得直接结束
+在当前正式流程中，create 成功后必须继续执行附件补传；不得在 create 返回 record_id 后直接结束并向用户回复“已录入”。
+
+判定规则：
+- create 成功 + 附件 update 成功 = 完整成功
+- create 成功 + 附件 update 失败 = 部分成功
+- create 成功 + 未执行附件补传 = 流程不完整，视为 bug

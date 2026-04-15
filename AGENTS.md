@@ -49,3 +49,15 @@
 3. 再执行 `feishu_bitable_app_table_record.update`
 
 可先通过 `python3 scripts/resume_intake_attachment_pipeline.py --target-key <target_key> --record-id <record_id> --pdf-path <pdf_path>` 查看标准动作顺序。
+
+
+## create 后的强制后续动作
+- 在正式简历录入流程中，`feishu_bitable_app_table_record.create` 成功后，不得直接结束并回复“已录入”。
+- create 成功只表示主记录已建立，不代表整条业务已完成。
+- create 成功后，必须继续执行附件补传链路：
+  1. 上传原始 PDF，获取 `file_token`；
+  2. 生成 `附件` 字段的标准 update payload；
+  3. 执行 `feishu_bitable_app_table_record.update` 更新 `附件`。
+- 只有当附件 update 也成功后，才允许回复“已完整录入”。
+- 如果 create 成功但附件失败，只能回复“部分成功”，不得回复成完整成功。
+- 如果既没有尝试附件补传，也没有明确说明失败原因，就属于流程 bug。
