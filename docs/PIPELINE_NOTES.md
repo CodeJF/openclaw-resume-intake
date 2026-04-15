@@ -7,13 +7,16 @@
 建议使用：
 
 ```bash
-python3 scripts/resume_intake_pipeline.py --target-key resume_intake_v1 --resume-text <resume_text_path> --fields-out <fields_json_path>
+python3 scripts/resume_intake.py --target-key resume_intake_v1 --pdf-path <pdf_path> --work-dir <work_dir>
 ```
 
 ## 这个统一入口做什么
-1. 调用 `scripts/build_candidate_fields.py` 从简历文本生成字段 JSON
-2. 调用 `scripts/guarded_bitable_write.py` 生成受保护的写入 payload
-3. 输出最终 create payload
+1. 调用 `scripts/extract_resume_text.py` 从 PDF 提取文本
+2. 调用 `scripts/build_candidate_fields.py` 生成字段 JSON
+3. 创建主记录
+4. 上传原始 PDF 获取 `file_token`
+5. 更新 `附件` 字段
+6. 按完整成功 / 部分成功 / 失败返回结果
 
 ## 约束边界
 - 这是 workspace 级的标准处理入口
