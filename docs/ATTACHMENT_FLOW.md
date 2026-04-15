@@ -38,3 +38,7 @@
 ## 身份模型说明
 正式生产链路应优先使用 Feishu 用户态工具链执行 create / upload / update。
 不要把 tenant-token 直连 OpenAPI 当作默认正式路径。
+
+
+## bitable 附件归属要求
+上传 PDF 到 `附件` 字段时，不能仅上传到普通云盘根目录。必须使用 bitable attachment media 路径（如 `parent_type=bitable_file`）获取属于目标多维表格附件空间的 `file_token`；否则更新 `附件` 字段会报 “The attachment does not belong to this bitable”。

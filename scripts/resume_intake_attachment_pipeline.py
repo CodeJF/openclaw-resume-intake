@@ -20,7 +20,7 @@ def main() -> int:
         raise SystemExit(f"PDF 文件不存在: {pdf_path}")
 
     payload = {
-        "warning": "此脚本只输出标准动作顺序说明，不执行真实上传或 update。正式运行请使用 scripts/resume_intake.py。",
+        "warning": "此脚本只输出标准动作顺序说明，不执行真实上传或 update。正式运行请使用 scripts/resume_intake_tool_plan.py，并由 agent 使用 Feishu 用户态工具执行。",
         "next_steps": [
             {
                 "step": 1,
@@ -28,12 +28,13 @@ def main() -> int:
                 "action": "upload",
                 "params": {
                     "file_path": str(pdf_path),
-                    "file_name": pdf_path.name
+                    "file_name": pdf_path.name,
+                    "parent_type": "bitable_file"
                 }
             },
             {
                 "step": 2,
-                "note": "从 feishu_drive_file.upload 返回结果中读取 file_token，然后调用 guarded_attachment_update.py 生成 update payload"
+                "note": "从 feishu_drive_file.upload 返回结果中读取属于目标 bitable 附件空间的 file_token，然后调用 guarded_attachment_update.py 生成 update payload"
             },
             {
                 "step": 3,

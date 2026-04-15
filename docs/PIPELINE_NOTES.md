@@ -15,7 +15,7 @@ python3 scripts/resume_intake_tool_plan.py --target-key resume_intake_v1 --pdf-p
 2. 调用 `scripts/build_candidate_fields.py` 生成字段 JSON
 3. 生成受保护的 create payload
 4. 由 agent 使用 Feishu 用户态工具执行 create
-5. 上传原始 PDF 获取 `file_token`
+5. 以上传到 bitable attachment media 的方式上传原始 PDF，获取属于目标多维表格的 `file_token`
 6. 生成受保护的附件 update payload
 7. 由 agent 使用 Feishu 用户态工具执行 update
 8. 按完整成功 / 部分成功 / 失败返回结果

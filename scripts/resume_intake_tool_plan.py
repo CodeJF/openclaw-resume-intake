@@ -79,7 +79,7 @@ def main() -> int:
 
     plan = {
         "mode": "feishu_user_toolchain",
-        "warning": "Do not use tenant-token OpenAPI direct writes for this workflow. Execute via Feishu tools with user identity.",
+        "warning": "Do not use tenant-token OpenAPI direct writes for this workflow. Execute via Feishu tools with user identity. Attachment upload must use bitable attachment media, not ordinary cloud-drive root uploads.",
         "target_key": args.target_key,
         "artifacts": {
             "pdf_path": str(pdf_path),
@@ -105,8 +105,11 @@ def main() -> int:
                 "action": "upload",
                 "params": {
                     "file_path": str(pdf_path),
+                    "file_name": pdf_path.name,
+                    "parent_type": "bitable_file",
                 },
-                "expect": "file_token",
+                "expect": "bitable-owned file_token",
+                "note": "Do not upload as ordinary explorer/cloud-drive file. The returned token must belong to the target bitable attachment space.",
             },
             {
                 "step": 3,
