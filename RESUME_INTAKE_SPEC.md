@@ -156,7 +156,7 @@ Forbidden runtime behavior:
 - infer a new table from the label `2025年应聘人员登记`
 
 Implementation hardening:
-- store the fixed write target in `config/bitable-target.json`
+- store the fixed write target in `config/bitable-targets.json`
 - treat that file as runtime source of truth
 - fail closed on any target mismatch
 - never substitute business labels for identifiers
@@ -164,8 +164,8 @@ Implementation hardening:
 
 ## Mandatory guarded write path
 Runtime writes should be derived via:
-- `python3 scripts/guarded_bitable_write.py create <fields_json_path>`
-- `python3 scripts/guarded_bitable_write.py update <record_id> <fields_json_path>`
+- `python3 scripts/guarded_bitable_write.py <target_key> create <fields_json_path>`
+- `python3 scripts/guarded_bitable_write.py <target_key> update <record_id> <fields_json_path>`
 
 The wrapper enforces the fixed app_token/table_id before producing the allowed record payload.
 Do not bypass this path in normal runtime operation.
@@ -176,7 +176,7 @@ A simple local demo path is now available:
 
 ```bash
 python3 scripts/build_candidate_fields.py examples/resume_text.sample.txt examples/generated_fields.sample.json
-python3 scripts/guarded_bitable_write.py create examples/generated_fields.sample.json
+python3 scripts/guarded_bitable_write.py resume_intake_v1 create examples/generated_fields.sample.json
 ```
 
 This produces a conservative fields JSON first, then emits the only allowed guarded Bitable create payload.

@@ -117,7 +117,7 @@ If the workflow cannot confidently proceed using the fixed target below, it must
 - `table_id = tblv3Pfr8Psw9Jr1`
 
 ## Runtime implementation guardrail
-- Treat `config/bitable-target.json` as the single source of truth for the Bitable write target.
+- Treat `config/bitable-targets.json` as the single source of truth for the Bitable write target.
 - Before any Bitable write, verify the runtime target matches that file exactly.
 - If a step would require `feishu_bitable_app` or `feishu_bitable_app_table`, stop immediately; this workspace must fail closed instead of discovering or creating anything.
 - Do not derive table names from `招聘进度管理` or `2025年应聘人员登记`; those are business labels, not creation instructions.
@@ -125,8 +125,8 @@ If the workflow cannot confidently proceed using the fixed target below, it must
 
 ## Executable guard
 Before any runtime Bitable write, validate the intended call with:
-- `python3 scripts/assert_bitable_target.py check-write feishu_bitable_app_table_record create <app_token> <table_id>`
-- or `python3 scripts/assert_bitable_target.py check-write feishu_bitable_app_table_record update <app_token> <table_id>`
+- `python3 scripts/assert_bitable_target.py check-write <target_key> feishu_bitable_app_table_record create <app_token> <table_id>`
+- or `python3 scripts/assert_bitable_target.py check-write <target_key> feishu_bitable_app_table_record update <app_token> <table_id>`
 
 If the script prints `DENY:`, stop immediately.
 
@@ -134,8 +134,8 @@ If the script prints `DENY:`, stop immediately.
 ## Mandatory write wrapper
 For any business write in this workspace, do not construct a raw Bitable write call first.
 Instead, generate the payload through:
-- `python3 scripts/guarded_bitable_write.py create <fields_json_path>`
-- `python3 scripts/guarded_bitable_write.py update <record_id> <fields_json_path>`
+- `python3 scripts/guarded_bitable_write.py <target_key> create <fields_json_path>`
+- `python3 scripts/guarded_bitable_write.py <target_key> update <record_id> <fields_json_path>`
 
 Only if this wrapper succeeds may the corresponding `feishu_bitable_app_table_record.create/update` call proceed.
 If the wrapper fails, the workflow must stop.
