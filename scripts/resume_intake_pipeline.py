@@ -14,18 +14,27 @@ def run(cmd: list[str]) -> str:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="简历 PDF → 文本 → 字段 → guarded payload 统一入口")
+    ap = argparse.ArgumentParser(description="简历 PDF 统一处理入口：PDF -> 文本 -> 字段 -> guarded payload")
     ap.add_argument("--target-key", default="resume_intake_v1")
-    ap.add_argument("--resume-text", required=True, help="已提取出的简历文本文件路径")
-    ap.add_argument("--fields-out", required=True, help="输出字段 JSON 路径")
+    ap.add_argument("--pdf-path", required=True, help="已下载的简历 PDF 路径")
+    ap.add_argument("--work-dir", required=True, help="本次处理的工作目录")
     args = ap.parse_args()
 
     root = Path(__file__).resolve().parent.parent
+    extract_script = root / "scripts" / "extract_resume_text.py"
     build_script = root / "scripts" / "build_candidate_fields.py"
     guarded_script = root / "scripts" / "guarded_bitable_write.py"
 
-    run([sys.executable, str(build_script), args.resume_text, args.fields_out])
-    payload = run([sys.executable, str(guarded_script), args.target_key, "create", args.fields_out])
+    work_dir = Path(args.work_dir)
+    work_dir.mkdir(parents=True, exist_ok=True)
+    resume_text_path = work_dir / "resume.txt"
+    fields_out_path = work_dir / "fields.json"
+
+    extract_out = run([sys.executable, str(extract_script), args.pdf_path])
+    resume_text_path.write_text(extract_out, encoding="utf-8")
+
+    run([sys.executable, str(build_script), str(resume_text_path), str(fields_out_path)])
+    payload = run([sys.executable, str(guarded_script), args.target_key, "create", str(fields_out_path)])
     print(payload.strip())
     return 0
 

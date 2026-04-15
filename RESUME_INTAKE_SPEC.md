@@ -191,3 +191,13 @@ python3 scripts/guarded_bitable_write.py resume_intake_v1 create examples/genera
 - `python3 scripts/resume_intake_pipeline.py --target-key resume_intake_v1 --resume-text <resume_text_path> --fields-out <fields_json_path>`
 
 该入口会先生成字段 JSON，再生成受保护的写入 payload。
+
+
+## 中间文件路径规则
+统一入口现在使用：
+- `--pdf-path <pdf_path>`
+- `--work-dir <work_dir>`
+
+并在 `work_dir` 下固定生成：
+- `resume.txt`
+- `fields.json`

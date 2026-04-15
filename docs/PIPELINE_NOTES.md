@@ -19,3 +19,8 @@ python3 scripts/resume_intake_pipeline.py --target-key resume_intake_v1 --resume
 - 这是 workspace 级的标准处理入口
 - 不是 OpenClaw 平台底层的强制事件绑定
 - 目标仍然是不确定时先问，确认后再执行
+
+
+## 路径补充
+当前统一入口通过 `--work-dir` 固定中间产物位置，不再要求运行时自己猜文本文件和字段 JSON 的路径。
+详见：`docs/PIPELINE_PATHS.md`

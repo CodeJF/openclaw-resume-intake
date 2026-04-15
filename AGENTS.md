@@ -151,3 +151,11 @@ v1 允许的写动作：
 - `python3 scripts/resume_intake_pipeline.py --target-key resume_intake_v1 --resume-text <resume_text_path> --fields-out <fields_json_path>`
 
 这条入口会串起字段提取与 guarded write payload 生成，优先于临时手工拆步骤。
+
+
+## 路径约定
+统一入口不再要求 agent 自己决定 `<resume_text_path>` 与 `<fields_json_path>`。
+当前约定是：
+- 传入 `--pdf-path`：已下载好的 PDF 路径
+- 传入 `--work-dir`：本次处理工作目录
+- 在 `work_dir` 下固定生成 `resume.txt` 和 `fields.json`
