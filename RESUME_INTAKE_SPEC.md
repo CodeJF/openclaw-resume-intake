@@ -12,6 +12,13 @@
 2. 授权后解析简历；
 3. 使用当前飞书用户身份，在目标飞书多维表格中创建一条新记录。
 
+## 默认分流规则
+在 `resume-intake` 这个 agent 中：
+- 只要收到的是 PDF 简历，默认任务就是“录入到多维表格”。
+- 分析、对比、评估、批量建议都属于次级分支。
+- 只有当用户明确说“不要录入，只做分析/对比/评估”时，才切换到分析分支。
+- 如果目标多维表格不明确，先确认目标；但默认任务仍然是录入，不是分析。
+
 ## 目标视图字段
 - 应聘者姓名
 - 年龄
@@ -97,13 +104,7 @@ v1 只尝试填写以下字段：
 2. 下载文件。
 3. 通过 `scripts/extract_resume_text.sh` 做本地文本提取。
 4. 保守地提取候选人字段。
-5. 先创建记录，只写安全文本字段：
-   - 应聘者姓名
-   - 联系方式
-   - 学历
-   - 毕业院校
-   - 专业
-   - 最近一家公司名称
+5. 先创建记录，只写安全文本字段。
 6. 如果条件允许，再把简历附件补到 `附件` 字段。
 7. 回复用户创建出的记录 id 及填写字段概览。
 
@@ -184,25 +185,3 @@ python3 scripts/guarded_bitable_write.py resume_intake_v1 create examples/genera
 详见：`docs/TARGET_ONBOARDING.md` 与 `scripts/register_bitable_target.py`
 
 另请参阅：`docs/TARGETS.md`，了解如何安全注册未来的新目标。
-
-
-## PDF 简历统一处理入口
-对于当前简历录入场景，推荐优先使用统一入口：
-- `python3 scripts/resume_intake_pipeline.py --target-key resume_intake_v1 --resume-text <resume_text_path> --fields-out <fields_json_path>`
-
-该入口会先生成字段 JSON，再生成受保护的写入 payload。
-
-
-## 中间文件路径规则
-统一入口现在使用：
-- `--pdf-path <pdf_path>`
-- `--work-dir <work_dir>`
-
-并在 `work_dir` 下固定生成：
-- `resume.txt`
-- `fields.json`
-
-
-## 写入失败处理
-如果 record.create 或 record.update 返回错误，必须立即向用户反馈失败原因，不允许静默卡住。
-详见：`docs/ERROR_REPLY_RULE.md`

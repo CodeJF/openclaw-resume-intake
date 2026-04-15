@@ -7,6 +7,11 @@
 - table_id：tblv3Pfr8Psw9Jr1
 - 业务标签：招聘进度管理 - 2025年应聘人员登记
 
+## 当前场景的默认分流
+- 在 `resume-intake` agent 里，只要收到的是 PDF 简历，默认优先进入“录入到多维表格”的流程。
+- 分析、对比、评估、批量建议属于次级分支。
+- 如果用户没有明确说“不要录入，只做分析”，就不应优先走分析型回复。
+
 ## 当前既定目标下允许的写动作
 - feishu_bitable_app_table_record.create
 - feishu_bitable_app_table_record.update
@@ -16,6 +21,7 @@
 - 把业务标签当成建表指令
 - 用 app/table 的 create/list/discovery 给既定写入流程兜底
 - 在没有先确认的情况下，自行切换到别的多维表格目标
+- 在默认录入场景里先跳去做聊天式候选人分析
 
 ## 关于创建能力的说明
 - 这不是对 agent 的全局禁令。
@@ -60,12 +66,3 @@ python3 scripts/guarded_bitable_write.py resume_intake_v1 create examples/genera
 详见：`docs/confirm-first-rules.md`
 
 另请参阅：`docs/TARGETS.md`，了解未来如何安全注册新目标。
-
-
-## 统一入口补充
-在当前简历录入场景中，收到 PDF 简历后，优先走 `scripts/resume_intake_pipeline.py`，避免运行时随意拆步骤。
-
-
-## 失败后必须回包
-如果写入失败，先回复用户，再决定是否重试或等待确认。
-详见：`docs/ERROR_REPLY_RULE.md`
