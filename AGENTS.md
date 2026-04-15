@@ -115,3 +115,9 @@ Only these Bitable tools are allowed for business writes:
 If the workflow cannot confidently proceed using the fixed target below, it must stop and ask for human intervention rather than trying to discover or create anything:
 - `app_token = Ft4cbSinbaxhOusgmzNcvwDUnWh`
 - `table_id = tblv3Pfr8Psw9Jr1`
+
+## Runtime implementation guardrail
+- Treat `config/bitable-target.json` as the single source of truth for the Bitable write target.
+- Before any Bitable write, verify the runtime target matches that file exactly.
+- If a step would require `feishu_bitable_app` or `feishu_bitable_app_table`, stop immediately; this workspace must fail closed instead of discovering or creating anything.
+- Do not derive table names from `招聘进度管理` or `2025年应聘人员登记`; those are business labels, not creation instructions.

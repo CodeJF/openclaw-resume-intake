@@ -154,3 +154,9 @@ Forbidden runtime behavior:
 - create table
 - list/search app or table as a precursor to writing
 - infer a new table from the label `2025年应聘人员登记`
+
+Implementation hardening:
+- store the fixed write target in `config/bitable-target.json`
+- treat that file as runtime source of truth
+- fail closed on any target mismatch
+- never substitute business labels for identifiers

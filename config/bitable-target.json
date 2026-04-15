@@ -1,0 +1,13 @@
+{
+  "app_token": "Ft4cbSinbaxhOusgmzNcvwDUnWh",
+  "table_id": "tblv3Pfr8Psw9Jr1",
+  "business_label": "招聘进度管理 - 2025年应聘人员登记",
+  "allowed_actions": ["record.create", "record.update"],
+  "forbidden_tools": ["feishu_bitable_app", "feishu_bitable_app_table"],
+  "forbidden_actions": ["app.create", "table.create", "app.list", "table.list"],
+  "policy": {
+    "never_infer_table_from_label": true,
+    "must_use_fixed_identifiers": true,
+    "fail_closed_on_mismatch": true
+  }
+}
