@@ -21,6 +21,7 @@ SAFE_KEYS = [
 
 DEGREE_WORDS = ["博士", "硕士", "本科", "大专", "中专", "高中"]
 FULLTIME_WORDS = [(r"全日制", "是"), (r"非全日制|成人教育|自考|函授", "否")]
+STOP_LABELS = ["意向城市", "期望薪资", "电话", "邮箱", "性别", "年龄", "现所在地", "最高学历"]
 
 
 def pick_name(text: str) -> str:
@@ -96,7 +97,6 @@ def pick_salary(text: str, label: str) -> str:
     if not m:
         return ""
     value = m.group(1).strip()
-    # 保守策略：如果不是明确数字/区间薪资，就留空，避免 NumberFieldConvFail
     if any(tok in value for tok in ["面议", "保密", "详谈"]):
         return ""
     if re.search(r"\d", value):
@@ -105,8 +105,17 @@ def pick_salary(text: str, label: str) -> str:
 
 
 def pick_position(text: str) -> str:
-    m = re.search(r"(?:应聘岗位|求职意向|意向岗位)[:：\s]+([^\n]{2,30})", text)
-    return m.group(1).strip() if m else ""
+    m = re.search(r"(?:应聘岗位|求职意向|意向岗位)[:：\s]+(.+)", text)
+    if not m:
+        return ""
+    value = m.group(1)
+    stop_positions = [value.find(label) for label in STOP_LABELS if label in value]
+    stop_positions = [p for p in stop_positions if p >= 0]
+    if stop_positions:
+        value = value[:min(stop_positions)]
+    value = re.split(r"[\n\r]", value)[0].strip()
+    value = re.sub(r"\s{2,}", " ", value).strip(" ：:;；，,")
+    return value
 
 
 def build_fields(text: str) -> dict[str, str]:
