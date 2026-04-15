@@ -2,18 +2,7 @@
 from __future__ import annotations
 import argparse
 import json
-import subprocess
-import sys
 from pathlib import Path
-
-ROOT = Path(__file__).resolve().parent
-
-
-def run(cmd: list[str]) -> str:
-    proc = subprocess.run(cmd, capture_output=True, text=True)
-    if proc.returncode != 0:
-        raise SystemExit(f"命令失败: {' '.join(cmd)}\n{proc.stderr or proc.stdout}")
-    return proc.stdout
 
 
 def main() -> int:
@@ -23,14 +12,13 @@ def main() -> int:
     ap.add_argument("--pdf-path", required=True)
     args = ap.parse_args()
 
-    root = Path(__file__).resolve().parent
+    root = Path(__file__).resolve().parent.parent
     attach_script = root / "scripts" / "guarded_attachment_update.py"
 
     pdf_path = Path(args.pdf_path)
     if not pdf_path.exists():
         raise SystemExit(f"PDF 文件不存在: {pdf_path}")
 
-    # 这里只生成标准动作说明，不直接写线上数据
     payload = {
         "next_steps": [
             {
