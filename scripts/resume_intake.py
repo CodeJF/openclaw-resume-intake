@@ -31,26 +31,27 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-OPENCLAW_CFG = Path(
-    subprocess.run(
-        ["openclaw", "config", "get", "configPath"],
-        capture_output=True, text=True,
-    ).stdout.strip() or "/root/.openclaw/config.json"
-)
 EXTRACT = ROOT / "scripts" / "extract_resume_text.py"
 BUILD   = ROOT / "scripts" / "build_candidate_fields.py"
+VENV_PYTHON = ROOT / ".venv" / "bin" / "python"
+
+
+def get_runner_python() -> str:
+    """Prefer workspace venv so PDF deps are available on the server."""
+    if VENV_PYTHON.exists():
+        return str(VENV_PYTHON)
+    return sys.executable
 
 
 # ── Feishu API helpers ────────────────────────────────────────────────────────
 
-def load_openclaw_config() -> dict:
-    return json.loads(OPENCLAW_CFG.read_text(encoding="utf-8"))
+OPENCLAW_CFG = Path.home() / ".openclaw" / "openclaw.json"
 
 
 def get_feishu_creds(account: str) -> tuple[str, str]:
-    cfg = load_openclaw_config()
+    cfg = json.loads(OPENCLAW_CFG.read_text(encoding="utf-8"))
     acct = cfg["channels"]["feishu"]["accounts"][account]
-    return acct["appId"], acct["appSecret"]
+    return str(acct["appId"]), str(acct["appSecret"])
 
 
 def get_tenant_token(app_id: str, app_secret: str) -> str:
@@ -141,7 +142,7 @@ def main() -> int:
     ap.add_argument("--target-key", default="resume_intake_v1")
     ap.add_argument("--pdf-path", required=True)
     ap.add_argument("--work-dir", required=True)
-    ap.add_argument("--feishu-account", default="default")
+    ap.add_argument("--feishu-account", default="main")
     args = ap.parse_args()
 
     pdf_path = Path(args.pdf_path)
@@ -155,12 +156,14 @@ def main() -> int:
 
     # ── 1. PDF → text ──────────────────────────────────────────────────────
     print("[1/5] 提取简历文本 …", flush=True)
-    result = run([sys.executable, str(EXTRACT), str(pdf_path)])
+    runner_python = get_runner_python()
+
+    result = run([runner_python, str(EXTRACT), str(pdf_path)])
     resume_txt.write_text(result.stdout, encoding="utf-8")
 
     # ── 2. text → fields ───────────────────────────────────────────────────
     print("[2/5] 生成候选人字段 …", flush=True)
-    run([sys.executable, str(BUILD), str(resume_txt), str(fields_json)])
+    run([runner_python, str(BUILD), str(resume_txt), str(fields_json)])
     fields = json.loads(fields_json.read_text(encoding="utf-8"))
 
     # ── 3. load target config ───────────────────────────────────────────────
