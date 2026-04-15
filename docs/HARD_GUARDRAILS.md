@@ -35,3 +35,13 @@ python3 scripts/assert_bitable_target.py check-write feishu_bitable_app_table_re
 ```
 
 Any `DENY:` result means the workflow must stop.
+
+
+## Mandatory wrapper usage
+Preferred runtime path:
+
+```bash
+python3 scripts/guarded_bitable_write.py create examples/create_fields.sample.json
+```
+
+This wrapper runs the executable preflight first and then emits the only allowed payload shape.

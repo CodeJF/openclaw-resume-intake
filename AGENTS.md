@@ -129,3 +129,13 @@ Before any runtime Bitable write, validate the intended call with:
 - or `python3 scripts/assert_bitable_target.py check-write feishu_bitable_app_table_record update <app_token> <table_id>`
 
 If the script prints `DENY:`, stop immediately.
+
+
+## Mandatory write wrapper
+For any business write in this workspace, do not construct a raw Bitable write call first.
+Instead, generate the payload through:
+- `python3 scripts/guarded_bitable_write.py create <fields_json_path>`
+- `python3 scripts/guarded_bitable_write.py update <record_id> <fields_json_path>`
+
+Only if this wrapper succeeds may the corresponding `feishu_bitable_app_table_record.create/update` call proceed.
+If the wrapper fails, the workflow must stop.

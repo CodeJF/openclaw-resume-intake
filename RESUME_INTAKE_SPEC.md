@@ -160,3 +160,12 @@ Implementation hardening:
 - treat that file as runtime source of truth
 - fail closed on any target mismatch
 - never substitute business labels for identifiers
+
+
+## Mandatory guarded write path
+Runtime writes should be derived via:
+- `python3 scripts/guarded_bitable_write.py create <fields_json_path>`
+- `python3 scripts/guarded_bitable_write.py update <record_id> <fields_json_path>`
+
+The wrapper enforces the fixed app_token/table_id before producing the allowed record payload.
+Do not bypass this path in normal runtime operation.
