@@ -1,25 +1,25 @@
 # AGENTS.md
 
-This workspace is dedicated to a single job: intake resume PDFs from Feishu, check user OAuth, extract structured candidate data, and create a new row in the target Feishu Bitable using the current Feishu user's identity.
+本工作区只负责一件事：接收飞书里的简历 PDF，检查用户 OAuth，提取候选人结构化信息，并使用当前飞书用户身份把数据写入目标多维表格。
 
-## Scope
-- Only handle resume intake and structured candidate registration.
-- Default channel context is Feishu.
-- Default app binding is the server's default Feishu appId: cli_a948e348d13d9cd4.
-- Only operate inside this workspace unless explicitly asked otherwise.
+## 工作范围
+- 只处理简历录入与候选人登记。
+- 默认渠道上下文为飞书。
+- 默认绑定的飞书应用为服务器上的 appId：cli_a948e348d13d9cd4。
+- 除非用户明确要求，否则只在本工作区内操作。
 
-## Workflow
-1. Detect a resume attachment in Feishu chat.
-2. If the current user has not authorized user-identity tools, ask them to complete OAuth first.
-3. After authorization, fetch the attachment, parse the resume, and extract fields conservatively.
-4. Create exactly one new Bitable record in the target table.
-5. Fill only fields that are reliably extracted. Leave all other fields empty.
-6. Do not update existing rows in v1. Do not perform dedupe write-back in v1.
+## 基本流程
+1. 识别飞书消息中的简历附件。
+2. 如果当前用户尚未授权用户身份工具，先引导完成 OAuth。
+3. 授权完成后，下载附件、解析简历，并保守提取字段。
+4. 在目标多维表格中创建一条新记录。
+5. 只填写能够可靠提取的字段，其余字段留空。
+6. v1 不更新已有记录，不做去重回写。
 
-## Target Bitable business rules
-Target view: 2025年应聘人员登记
+## 目标多维表格业务规则
+目标视图：2025年应聘人员登记
 
-Preferred writable fields in v1:
+v1 优先可写字段：
 - 应聘者姓名
 - 年龄
 - 应聘岗位
@@ -33,7 +33,7 @@ Preferred writable fields in v1:
 - 期望薪资
 - 附件
 
-Fields to leave untouched in v1 unless explicitly provided elsewhere:
+v1 默认不碰的字段：
 - 🛎 重复人选提醒（系统自动判断）
 - 需求部门
 - 简历渠道
@@ -43,116 +43,108 @@ Fields to leave untouched in v1 unless explicitly provided elsewhere:
 - 📝未邀约/到面原因
 - 📝 备注
 
-## Extraction policy
-- Be conservative. If a field is not clearly stated, leave it empty.
-- 联系方式: prefer phone; if both phone and email are present, store as a compact text string.
-- 年龄: use explicit age if present; otherwise derive only when birth year/month is clearly stated.
-- 是否为全日制: write only when the resume clearly implies full-time or non-full-time.
-- 最近一家公司名称: use the most recent employer from work history.
-- 薪资 fields: write only when clearly stated.
+## 提取规则
+- 保守提取。字段不明确就留空。
+- 联系方式：优先手机号；如果手机号和邮箱都有，就写成紧凑文本。
+- 年龄：优先使用简历里明确写出的年龄；只有出生年份/月明确时才推导。
+- 是否为全日制：只有简历明确体现时才写。
+- 最近一家公司名称：取最近工作经历中的公司。
+- 薪资字段：只有明确出现时才写。
 
-## Safety
-- Never fabricate candidate data.
-- Never overwrite existing Bitable records in v1.
-- Never export resumes outside Feishu/OpenClaw workflow.
-- If parse confidence is low, say so and only write the obvious fields.
-- If the PDF tool fails due to quota or provider limits, do not stay silent. Tell the user the resume was received and downloaded, but parsing is temporarily blocked and needs fallback or retry.
+## 安全要求
+- 不得编造候选人信息。
+- v1 不覆盖已有多维表格记录。
+- 不得把简历导出到飞书/OpenClaw 之外。
+- 如果解析置信度低，要明确说明，只写明显可靠的字段。
+- 如果 PDF 工具因配额或模型限制失败，不要沉默。要告诉用户：简历已收到并下载，但解析暂时受阻，需要重试或走备用方案。
 
-## Memory
-- Keep durable workflow notes in docs/ and curated learnings in MEMORY.md if created later.
-- Use memory/ for run notes when useful, but avoid storing sensitive raw resume contents unless needed for debugging.
+## 已验证的运行时写入顺序
+处理 `resume-intake` 飞书账号上的真实简历时，优先按以下顺序执行：
+1. 下载消息中的文件。
+2. 运行 `scripts/extract_resume_text.sh <pdf_path>` 进行本地文本提取。
+3. 只抽取可靠字段。
+4. 先创建记录，只写安全文本字段。
+5. 如果条件允许，再把简历附件写入 `附件` 字段。
+6. 回复用户，说明已创建记录及填写了哪些字段。
 
+不要把 CLI 干跑失败当成真实业务链路失败。2026-04-14 的真实飞书入站消息已经成功完成 create + update。
 
-## Proven runtime write pattern
-When handling a real inbound resume on the `resume-intake` Feishu account, prefer this concrete order:
-1. Download file from the inbound message.
-2. Run `scripts/extract_resume_text.sh <pdf_path>` for local text extraction.
-3. Extract only safe candidate fields.
-4. Create the record first with safe text fields only.
-5. Update the created record afterwards to attach the resume file into `附件`.
-6. Reply with the record id and a concise summary.
+## 目标视图要求
+用户真正关心的是：把数据新增到现有业务入口 `招聘进度管理 - 2025年应聘人员登记`。
+成功标准是：新记录能出现在这个业务入口里，而不是新建一个表。
+2026-04-14 的一次真实运行已经验证过这一点，所以应继续复用那条最小可行写入路径。
 
-Do not treat CLI dry-run failures as proof that the real inbound business flow is broken. Real inbound Feishu message context has already succeeded once for create+update on 2026-04-14.
+## 硬性安全规则：绝不创建 app 或 table
+对本工作区来说，以下行为一律视为 bug：
+- 调用 `feishu_bitable_app.create`
+- 调用 `feishu_bitable_app_table.create`
+- 任何创建新多维表格 app、新数据表或新业务数据集的动作
 
-
-## Target view requirement
-The user cares specifically about adding records into the existing business entry `招聘进度管理 - 2025年应聘人员登记`.
-Treat success as: the created record is visible there, not as creating any new table or new business dataset.
-A real run on 2026-04-14 already succeeded with this target view, so prefer reusing the same minimal create/update field pattern.
-
-
-## Hard safety rule: never create apps or tables
-For this workspace, it is always a bug to call either of these tools/actions:
-- `feishu_bitable_app.create`
-- `feishu_bitable_app_table.create`
-- any action that creates a new Bitable app, a new table, or a new business dataset
-
-This workspace must only write into the existing recruitment entry by targeting the already known identifiers:
+本工作区只能写入既有招聘目标，对应固定标识：
 - `app_token = Ft4cbSinbaxhOusgmzNcvwDUnWh`
 - `table_id = tblv3Pfr8Psw9Jr1`
 
-Allowed write actions in v1:
+v1 允许的写动作：
 - `feishu_bitable_app_table_record.create`
-- `feishu_bitable_app_table_record.update` (only to update the created record, e.g. attach resume file)
+- `feishu_bitable_app_table_record.update`（仅用于更新刚创建的记录，例如补附件）
 
-Before any write, mentally check:
-- Am I creating a new app or a new table? If yes, stop: that is a bug.
-- Am I writing to the exact existing app_token and table_id above? If not, stop.
+每次写入前先自检：
+- 我是不是在创建新 app 或新 table？如果是，立即停止。
+- 我是不是在写固定的 app_token 和 table_id？如果不是，立即停止。
 
-
-## Absolute prohibition on table/app creation tools
-This workspace must never call these tools in any circumstance:
+## 绝对禁止直接使用的 table/app 工具
+本工作区在任何情况下都不得直接调用：
 - `feishu_bitable_app`
 - `feishu_bitable_app_table`
 
-Reason: even listing or reasoning around app/table creation has previously led the model into creating a wrong table.
-For this workspace, table/app discovery is already settled and must not be re-derived at runtime.
+原因：即使只是做 app/table 发现，也曾导致模型错误新建 table。
+对于本工作区，app/table 目标已经确定，不允许运行时重新推导。
 
-Only these Bitable tools are allowed for business writes:
+业务写入只允许使用：
 - `feishu_bitable_app_table_record.create`
 - `feishu_bitable_app_table_record.update`
 
-If the workflow cannot confidently proceed using the fixed target below, it must stop and ask for human intervention rather than trying to discover or create anything:
+如果无法在固定目标下继续执行，就停止并请求人工介入，不允许自行发现或创建：
 - `app_token = Ft4cbSinbaxhOusgmzNcvwDUnWh`
 - `table_id = tblv3Pfr8Psw9Jr1`
 
-## Runtime implementation guardrail
-- Treat `config/bitable-targets.json` as the single source of truth for the Bitable write target.
-- Before any Bitable write, verify the runtime target matches that file exactly.
-- If a step would require `feishu_bitable_app` or `feishu_bitable_app_table`, stop immediately; this workspace must fail closed instead of discovering or creating anything.
-- Do not derive table names from `招聘进度管理` or `2025年应聘人员登记`; those are business labels, not creation instructions.
+## 运行时实现护栏
+- `config/bitable-targets.json` 是多维表格目标的唯一真相源。
+- 每次写入前，都必须校验运行时目标与该配置完全一致。
+- 如果某一步需要 `feishu_bitable_app` 或 `feishu_bitable_app_table`，必须立即停止；本工作区应失败关闭，而不是继续发现或创建。
+- 不得根据 `招聘进度管理` 或 `2025年应聘人员登记` 这些业务标签去推导表名；它们只是业务标签，不是创建指令。
 
-
-## Executable guard
-Before any runtime Bitable write, validate the intended call with:
+## 可执行护栏
+任何业务写入前，先执行：
 - `python3 scripts/assert_bitable_target.py check-write <target_key> feishu_bitable_app_table_record create <app_token> <table_id>`
-- or `python3 scripts/assert_bitable_target.py check-write <target_key> feishu_bitable_app_table_record update <app_token> <table_id>`
+- 或 `python3 scripts/assert_bitable_target.py check-write <target_key> feishu_bitable_app_table_record update <app_token> <table_id>`
 
-If the script prints `DENY:`, stop immediately.
+如果脚本输出 `DENY:`，必须立刻停止。
 
-
-## Mandatory write wrapper
-For any business write in this workspace, do not construct a raw Bitable write call first.
-Instead, generate the payload through:
+## 强制写入包装器
+本工作区的业务写入，不能先直接拼原始 Bitable 写调用。
+必须先通过以下入口生成 payload：
 - `python3 scripts/guarded_bitable_write.py <target_key> create <fields_json_path>`
 - `python3 scripts/guarded_bitable_write.py <target_key> update <record_id> <fields_json_path>`
 
-Only if this wrapper succeeds may the corresponding `feishu_bitable_app_table_record.create/update` call proceed.
-If the wrapper fails, the workflow must stop.
+只有包装器成功后，才允许继续对应的 `feishu_bitable_app_table_record.create/update`。
+如果包装器失败，流程必须停止。
 
-
-See also: `docs/TARGETS.md` for how to register future Bitable targets safely.
-
+## 多目标规则
+每次多维表格业务写入都必须绑定一个明确的 `target_key`。
+不得根据用户表述直接推导 app/table 目标。
+当前简历录入流程使用：`resume_intake_v1`。
 
 ## 确认优先
 - 任何不确定的事情，不要直接操作，必须先反问飞书用户，拿到明确结果后再执行。
 - 目标多维表格、表/视图、target_key、字段映射、是否新增/更新等，只要不明确，就先问。
 - 所有这类流程约束与记忆内容统一使用中文记录。
-- 详见：`docs/确认优先规则.md`
-
+- 详见：`docs/confirm-first-rules.md`
 
 ## Target 注册流程
 - 对于尚未注册的多维表格目标，先确认用户要写入哪个目标。
 - 目标明确后，可使用 `python3 scripts/register_bitable_target.py --spec <spec_json>` 安全注册。
 - 注册脚本不创建 app/table，只负责检查信息完整性并写入 `config/bitable-targets.json`。
 - 详见：`docs/TARGET_ONBOARDING.md`
+
+另请参阅：`docs/TARGETS.md`，了解如何安全注册后续新的多维表格目标。

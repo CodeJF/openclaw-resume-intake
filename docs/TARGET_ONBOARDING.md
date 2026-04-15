@@ -1,6 +1,6 @@
 # 多维表格目标注册说明
 
-目标：把“未知目标 → 先问 → 已明确目标 → 注册 → 后续写入”这条链走完整。
+目标：把“未知目标 → 先问 → 已明确目标 → 注册 → 后续写入”这条链跑完整。
 
 ## 原则
 - 本流程**不负责创建**多维表格 app 或 table。
@@ -19,12 +19,12 @@
 - `app_token`
 - `table_id`
 
-如果 `app_token` / `table_id` 还未确认：
-- 先不要注册
-- 先继续向用户确认或通过后续明确核验获得
+如果 `app_token` / `table_id` 还没确认：
+- 不要注册
+- 继续向用户确认，或待后续明确核验后再注册
 
 ## 注册脚本
-使用：
+使用方式：
 
 ```bash
 python3 scripts/register_bitable_target.py --spec target-spec.json
@@ -45,18 +45,18 @@ python3 scripts/register_bitable_target.py --spec target-spec.json
 ```
 
 ## 脚本行为
-- 如果缺字段：输出需要继续向用户确认的内容，并拒绝写配置
-- 如果目标已存在：默认拒绝覆盖
-- 如果信息完整：按统一结构写入 `config/bitable-targets.json`
+- 缺字段时：输出需要继续向用户确认的内容，并拒绝写配置
+- 目标已存在时：默认拒绝覆盖
+- 信息完整时：按统一结构写入 `config/bitable-targets.json`
 
 ## 禁止事项
-- 不要在用户没有明确目标时直接注册
-- 不要根据业务名称猜测 app_token / table_id
-- 不要在注册流程中创建表
-- 不要自动覆盖已有 target_key
+- 用户没有明确目标时，不得直接注册
+- 不得根据业务名称猜测 `app_token` / `table_id`
+- 注册流程中不得创建表
+- 不得自动覆盖已有 target_key
 
 ## 注册后怎么用
-注册成功后，使用：
+注册成功后，通过以下方式写入：
 
 ```bash
 python3 scripts/guarded_bitable_write.py <target_key> create <fields_json_path>

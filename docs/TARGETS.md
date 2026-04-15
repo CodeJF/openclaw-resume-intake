@@ -1,39 +1,40 @@
-# Bitable Target Registration Guide
+# 多维表格目标注册指南
 
-Use this workspace in a multi-target way: every Bitable business write must bind to a named `target_key`.
+本工作区采用多目标模式：每一次多维表格业务写入，都必须绑定一个命名的 `target_key`。
 
-## Source of truth
+## 真相源
 - `config/bitable-targets.json`
 
-## Rule
-Do not write to a Bitable target from user wording alone.
-Always register a target first, then use its `target_key` in guarded writes.
+## 核心规则
+不要仅凭用户自然语言就直接写某个多维表格目标。
+必须先注册目标，再通过它的 `target_key` 进入受保护写入流程。
 
-## Add a new target
-1. Copy the template:
+## 新增目标的步骤
+1. 复制模板：
    - `templates/bitable-target.template.json`
-2. Fill in:
+2. 填写：
    - `target_key`
    - `app_token`
    - `table_id`
    - `business_label`
-3. Verify the target identifiers live before registration.
-4. Add the target under `targets` in `config/bitable-targets.json`.
-5. Use the guarded wrapper:
+3. 在线核验目标标识是否真实有效。
+4. 把目标加入 `config/bitable-targets.json` 的 `targets` 下。
+5. 通过 guarded wrapper 使用：
 
 ```bash
 python3 scripts/guarded_bitable_write.py <target_key> create <fields_json_path>
 ```
 
-## Naming convention
-Recommended `target_key` format:
-- `<business_domain>_<purpose>_v1`
-- examples:
-  - `resume_intake_v1`
-  - `candidate_followup_v1`
-  - `interview_schedule_v1`
+## target_key 命名建议
+推荐格式：
+- `<业务域>_<用途>_v1`
 
-## Required fields for each target
+示例：
+- `resume_intake_v1`
+- `candidate_followup_v1`
+- `interview_schedule_v1`
+
+## 每个目标必须包含的字段
 - `app_token`
 - `table_id`
 - `business_label`
@@ -41,37 +42,35 @@ Recommended `target_key` format:
 - `forbidden_tools`
 - `policy`
 
-## Non-negotiable policy
-Every target must keep:
+## 不可谈判的固定策略
+每个 target 都必须保持：
 - `allowed_actions = ["record.create", "record.update"]`
 - `forbidden_tools = ["feishu_bitable_app", "feishu_bitable_app_table"]`
 - `policy.never_infer_table_from_label = true`
 - `policy.must_use_fixed_identifiers = true`
 - `policy.fail_closed_on_mismatch = true`
 
-## Why this exists
-This prevents runtime drift where a model might:
-- infer a table from a business label
-- create a new table accidentally
-- write to an unintended Bitable target
+## 为什么要这样做
+这样可以防止运行时漂移，例如：
+- 根据业务标签误推 table
+- 意外创建新 table
+- 把数据写到错误的多维表格目标
 
-## Resume intake current target
+## 当前简历录入目标
 - `resume_intake_v1`
-- business label: `招聘进度管理 - 2025年应聘人员登记`
+- 业务标签：`招聘进度管理 - 2025年应聘人员登记`
 
-## Registration checklist
-- [ ] app_token verified live
-- [ ] table_id verified live
-- [ ] business label documented
-- [ ] target added to config/bitable-targets.json
-- [ ] guarded write test passes
-
+## 注册检查清单
+- [ ] 已在线核验 app_token
+- [ ] 已在线核验 table_id
+- [ ] 已记录 business label
+- [ ] 已加入 config/bitable-targets.json
+- [ ] 已通过 guarded write 测试
 
 ## 确认优先补充规则
-如果用户尚未明确要写入哪个多维表格，不得进入 target 注册流程；必须先向用户确认。
-详见：`docs/确认优先规则.md`
-
+如果用户尚未明确要写入哪个多维表格，不得直接进入 target 注册流程；必须先向用户确认。
+详见：`docs/confirm-first-rules.md`
 
 ## 自动化注册补充
-除了手动按模板登记，也可以通过 `scripts/register_bitable_target.py` 按 spec 文件安全写入配置。
+除手动按模板登记外，也可以通过 `scripts/register_bitable_target.py` 按 spec 文件安全写入配置。
 详见：`docs/TARGET_ONBOARDING.md`
