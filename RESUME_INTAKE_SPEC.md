@@ -184,3 +184,10 @@ python3 scripts/guarded_bitable_write.py resume_intake_v1 create examples/genera
 详见：`docs/TARGET_ONBOARDING.md` 与 `scripts/register_bitable_target.py`
 
 另请参阅：`docs/TARGETS.md`，了解如何安全注册未来的新目标。
+
+
+## PDF 简历统一处理入口
+对于当前简历录入场景，推荐优先使用统一入口：
+- `python3 scripts/resume_intake_pipeline.py --target-key resume_intake_v1 --resume-text <resume_text_path> --fields-out <fields_json_path>`
+
+该入口会先生成字段 JSON，再生成受保护的写入 payload。

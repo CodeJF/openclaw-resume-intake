@@ -60,3 +60,7 @@ python3 scripts/guarded_bitable_write.py resume_intake_v1 create examples/genera
 详见：`docs/confirm-first-rules.md`
 
 另请参阅：`docs/TARGETS.md`，了解未来如何安全注册新目标。
+
+
+## 统一入口补充
+在当前简历录入场景中，收到 PDF 简历后，优先走 `scripts/resume_intake_pipeline.py`，避免运行时随意拆步骤。

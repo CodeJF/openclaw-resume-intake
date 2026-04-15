@@ -144,3 +144,10 @@ v1 允许的写动作：
 - 详见：`docs/TARGET_ONBOARDING.md`
 
 另请参阅：`docs/TARGETS.md`，了解如何安全注册后续新的多维表格目标。
+
+
+## PDF 简历的标准入口
+当飞书用户上传的是 PDF 简历，且当前场景是简历录入时，优先使用统一入口：
+- `python3 scripts/resume_intake_pipeline.py --target-key resume_intake_v1 --resume-text <resume_text_path> --fields-out <fields_json_path>`
+
+这条入口会串起字段提取与 guarded write payload 生成，优先于临时手工拆步骤。
