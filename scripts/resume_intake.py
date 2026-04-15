@@ -182,10 +182,16 @@ def main() -> int:
         f"https://open.feishu.cn/open-apis/bitable/v1/apps"
         f"/{app_token}/tables/{table_id}/records"
     )
-    create_data = bitable_request(
-        "POST", create_url, token,
-        payload={"fields": fields},
-    )
+    try:
+        create_data = bitable_request(
+            "POST", create_url, token,
+            payload={"fields": fields},
+        )
+    except Exception as exc:
+        raise SystemExit(
+            f"字段写入失败: {exc}\n"
+            f"状态: FATAL — 未写入任何数据"
+        )
     if create_data.get("code") not in (0, None):
         raise SystemExit(
             f"字段写入失败:\n{json.dumps(create_data, ensure_ascii=False)}\n"
@@ -218,10 +224,15 @@ def main() -> int:
         f"https://open.feishu.cn/open-apis/bitable/v1/apps"
         f"/{app_token}/tables/{table_id}/records/{record_id}"
     )
-    update_data = bitable_request(
-        "PUT", update_url, token,
-        payload={"fields": {"附件": [{"file_token": file_token}]}},
-    )
+    try:
+        update_data = bitable_request(
+            "PUT", update_url, token,
+            payload={"fields": {"附件": [{"file_token": file_token}]}},
+        )
+    except Exception as exc:
+        print(f"[!] 附件写入失败: {exc}", flush=True)
+        print("[!] 状态: 部分成功 — 字段已写入，附件写入失败", flush=True)
+        return 1
     if update_data.get("code") not in (0, None):
         print(f"[!] 附件写入失败: {update_data}", flush=True)
         print("[!] 状态: 部分成功 — 字段已写入，附件写入失败", flush=True)
