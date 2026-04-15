@@ -6,7 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent
 ASSERT = ROOT / "scripts" / "assert_bitable_target.py"
 CFG = ROOT / "config" / "bitable-targets.json"
 
