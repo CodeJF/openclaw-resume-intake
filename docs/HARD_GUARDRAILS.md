@@ -1,24 +1,29 @@
 # 强护栏规则
 
-本工作区只能写入预先批准的固定多维表格目标。
+本文件描述的是**当前既定简历录入目标**的强护栏，不是对 agent 所有业务场景的全局禁止规则。
 
-## 固定目标
+## 当前既定目标
 - app_token：Ft4cbSinbaxhOusgmzNcvwDUnWh
 - table_id：tblv3Pfr8Psw9Jr1
 - 业务标签：招聘进度管理 - 2025年应聘人员登记
 
-## 运行时允许的写动作
+## 当前既定目标下允许的写动作
 - feishu_bitable_app_table_record.create
 - feishu_bitable_app_table_record.update
 
-## 运行时禁止的工具/动作
-- feishu_bitable_app
-- feishu_bitable_app_table
-- 任何 app/table 的 create/list/discovery 流程
-- 任何试图从业务标签推导 table 的行为
+## 当前既定目标下禁止的行为
+- 因为目标不明确而新建 app/table
+- 把业务标签当成建表指令
+- 用 app/table 的 create/list/discovery 给既定写入流程兜底
+- 在没有先确认的情况下，自行切换到别的多维表格目标
+
+## 关于创建能力的说明
+- 这不是对 agent 的全局禁令。
+- 如果飞书用户明确提出要新建多维表格 app、数据表或新业务目标，并且需求已经确认清楚，可以在那个创建场景中执行创建。
+- 本文件只要求：在“写入既定目标”这条链路里，不允许因为不确定而擅自创建。
 
 ## 失败关闭规则
-如果某一步无法在固定 app_token / table_id 下继续执行，就必须停止并请求人工介入。不得搜索、推断或创建。
+如果某一步无法在固定 app_token / table_id 下继续执行，就必须停止并请求人工介入或先向用户确认。不得搜索、推断或创建来兜底。
 
 ## 可执行预检
 写入前使用：

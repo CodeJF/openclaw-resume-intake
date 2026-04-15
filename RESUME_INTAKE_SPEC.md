@@ -119,12 +119,13 @@ v1 只尝试填写以下字段：
 这一点已在 2026-04-14 的真实生产近似场景中验证成功：新记录确实出现在 `2025年应聘人员登记` 中。
 因此 v1 应继续复用已成功的最小写入路径，而不是额外默认填更多业务字段。
 
-## Bug 修复要求：绝不误建 table
+## Bug 修复目标：禁止未确认就误建 table
 2026-04-14 曾出现过一个 bug：agent 错误调用了 `feishu_bitable_app_table.create`，创建了一个名为 `应聘人员登记` 的新 table，并把记录写进了错误的 `table_id`。
 
-这是被明确禁止的行为。
+这个 bug 的关键问题不是“永远不能创建 table”，而是：
+- 在当前既定业务目标已经明确的情况下，agent 不应因为目标理解错误或信息不明确而擅自建表。
 
-所有写入的正确目标：
+当前这条简历录入链路的正确目标：
 - app_token：Ft4cbSinbaxhOusgmzNcvwDUnWh
 - table_id：tblv3Pfr8Psw9Jr1
 - 业务目标：现有入口 `招聘进度管理 - 2025年应聘人员登记`
@@ -132,23 +133,21 @@ v1 只尝试填写以下字段：
 工作流不得根据业务标签去推断或创建 table。
 业务标签不是建表指令。
 
-## 运行时工具限制（用于防 bug）
-运行时不得调用 `feishu_bitable_app` 或 `feishu_bitable_app_table`。
-这是为了防止误建表的硬限制。
+## 关于创建能力的边界
+- 本规范并不表示 agent 在所有业务里都禁止创建多维表格 app 或 table。
+- 如果飞书用户明确提出要新建多维表格、数据表或新的业务数据目标，并且需求已经确认清楚，则可以执行创建。
+- 真正禁止的是：在目标不明确、信息不完整或当前场景本来是“写入既定目标”时，擅自创建新表作为兜底。
 
-运行时只能使用预先固定的目标标识：
-- app_token：Ft4cbSinbaxhOusgmzNcvwDUnWh
-- table_id：tblv3Pfr8Psw9Jr1
-
-运行时允许的 Bitable 写动作：
-- record.create
-- record.update
-
-运行时禁止的行为：
-- create app
-- create table
-- 先 list/search app 或 table 再写入
-- 从 `2025年应聘人员登记` 这个业务标签推导出新的 table
+## 运行时限制（仅针对当前既定写入链）
+对当前 resume_intake_v1 这条既定写入链，运行时应：
+- 直接使用预先固定的目标标识：
+  - app_token：Ft4cbSinbaxhOusgmzNcvwDUnWh
+  - table_id：tblv3Pfr8Psw9Jr1
+- 允许的 Bitable 写动作：
+  - record.create
+  - record.update
+- 不应通过 create/list/search app 或 table 的方式重新推导既定目标
+- 不应从 `2025年应聘人员登记` 这个业务标签推导出新的 table
 
 ## 实现加固
 - 固定写入目标保存在 `config/bitable-targets.json`
@@ -181,6 +180,7 @@ python3 scripts/guarded_bitable_write.py resume_intake_v1 create examples/genera
 
 ## Target onboarding
 如果要新增一个新的多维表格写入目标，应走注册流程，而不是让运行时自行推断。
+如果用户明确要求新建多维表格或新表，也必须先确认清楚后再进入创建或注册流程。
 详见：`docs/TARGET_ONBOARDING.md` 与 `scripts/register_bitable_target.py`
 
 另请参阅：`docs/TARGETS.md`，了解如何安全注册未来的新目标。
