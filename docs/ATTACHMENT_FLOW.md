@@ -25,3 +25,7 @@
 - create 成功 + 附件成功：完整成功
 - create 成功 + 附件失败：部分成功
 - create 失败：失败
+
+
+## 标准入口补充
+可先通过 `scripts/resume_intake_attachment_pipeline.py` 输出附件补传的标准动作顺序。

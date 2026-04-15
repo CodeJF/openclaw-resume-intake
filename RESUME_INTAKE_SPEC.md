@@ -23,3 +23,8 @@
 - 字段写入和附件写入都成功：回复完整成功。
 - 字段写入成功但附件失败：回复部分成功，并点明附件失败。
 - 字段写入失败：回复失败原因，不要沉默。
+
+
+## 附件补传标准链路
+当前附件链路的标准顺序为：upload -> file_token -> guarded attachment update -> record.update。
+可通过 `scripts/resume_intake_attachment_pipeline.py` 查看标准动作顺序。

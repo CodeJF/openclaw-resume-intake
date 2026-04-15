@@ -40,3 +40,12 @@
 - 你是不是在批量处理简历
 
 这些都属于次级分支，不应抢占默认录入流程。
+
+
+## 附件补传标准链路
+当主记录 create 成功后，优先按标准顺序处理附件：
+1. 上传本地 PDF，拿到 `file_token`
+2. 使用 `scripts/guarded_attachment_update.py` 生成标准 update payload
+3. 再执行 `feishu_bitable_app_table_record.update`
+
+可先通过 `python3 scripts/resume_intake_attachment_pipeline.py --target-key <target_key> --record-id <record_id> --pdf-path <pdf_path>` 查看标准动作顺序。
