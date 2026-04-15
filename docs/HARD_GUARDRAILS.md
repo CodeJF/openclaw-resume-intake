@@ -45,3 +45,10 @@ python3 scripts/guarded_bitable_write.py create examples/create_fields.sample.js
 ```
 
 This wrapper runs the executable preflight first and then emits the only allowed payload shape.
+
+
+## End-to-end local demo
+```bash
+python3 scripts/build_candidate_fields.py examples/resume_text.sample.txt examples/generated_fields.sample.json
+python3 scripts/guarded_bitable_write.py create examples/generated_fields.sample.json
+```

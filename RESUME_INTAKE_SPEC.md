@@ -169,3 +169,14 @@ Runtime writes should be derived via:
 
 The wrapper enforces the fixed app_token/table_id before producing the allowed record payload.
 Do not bypass this path in normal runtime operation.
+
+
+## Demo pipeline on server
+A simple local demo path is now available:
+
+```bash
+python3 scripts/build_candidate_fields.py examples/resume_text.sample.txt examples/generated_fields.sample.json
+python3 scripts/guarded_bitable_write.py create examples/generated_fields.sample.json
+```
+
+This produces a conservative fields JSON first, then emits the only allowed guarded Bitable create payload.
