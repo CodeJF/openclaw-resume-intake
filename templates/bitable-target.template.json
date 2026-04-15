@@ -1,0 +1,14 @@
+{
+  "target_key": "replace_me_v1",
+  "app_token": "app_token_here",
+  "table_id": "table_id_here",
+  "business_label": "业务标签（例如：招聘进度管理 - 2025年应聘人员登记）",
+  "allowed_actions": ["record.create", "record.update"],
+  "forbidden_tools": ["feishu_bitable_app", "feishu_bitable_app_table"],
+  "policy": {
+    "never_infer_table_from_label": true,
+    "must_use_fixed_identifiers": true,
+    "fail_closed_on_mismatch": true
+  },
+  "notes": "Only register a target after live verification of app_token/table_id."
+}

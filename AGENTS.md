@@ -139,3 +139,6 @@ Instead, generate the payload through:
 
 Only if this wrapper succeeds may the corresponding `feishu_bitable_app_table_record.create/update` call proceed.
 If the wrapper fails, the workflow must stop.
+
+
+See also: `docs/TARGETS.md` for how to register future Bitable targets safely.

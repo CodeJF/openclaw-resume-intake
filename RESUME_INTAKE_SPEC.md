@@ -180,3 +180,6 @@ python3 scripts/guarded_bitable_write.py resume_intake_v1 create examples/genera
 ```
 
 This produces a conservative fields JSON first, then emits the only allowed guarded Bitable create payload.
+
+
+See also: `docs/TARGETS.md` for how to register future Bitable targets safely.
