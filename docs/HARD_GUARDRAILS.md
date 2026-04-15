@@ -55,3 +55,8 @@ python3 scripts/guarded_bitable_write.py resume_intake_v1 create examples/genera
 
 
 See also: `docs/TARGETS.md` for how to register future Bitable targets safely.
+
+
+## 确认优先补充
+若目标不明确，先问用户，不要执行。
+详见：`docs/确认优先规则.md`

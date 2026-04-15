@@ -65,3 +65,8 @@ This prevents runtime drift where a model might:
 - [ ] business label documented
 - [ ] target added to config/bitable-targets.json
 - [ ] guarded write test passes
+
+
+## 确认优先补充规则
+如果用户尚未明确要写入哪个多维表格，不得进入 target 注册流程；必须先向用户确认。
+详见：`docs/确认优先规则.md`

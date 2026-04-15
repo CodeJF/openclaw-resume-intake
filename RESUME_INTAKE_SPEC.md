@@ -183,3 +183,9 @@ This produces a conservative fields JSON first, then emits the only allowed guar
 
 
 See also: `docs/TARGETS.md` for how to register future Bitable targets safely.
+
+
+## 中文确认优先规则
+对于目标表不明确、字段不明确、用户意图不明确等情况，必须先向飞书用户确认，再执行。
+不要猜测，不要兜底创建，不要默认写入。
+详见：`docs/确认优先规则.md`

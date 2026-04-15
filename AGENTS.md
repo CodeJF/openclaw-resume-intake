@@ -142,3 +142,10 @@ If the wrapper fails, the workflow must stop.
 
 
 See also: `docs/TARGETS.md` for how to register future Bitable targets safely.
+
+
+## 确认优先
+- 任何不确定的事情，不要直接操作，必须先反问飞书用户，拿到明确结果后再执行。
+- 目标多维表格、表/视图、target_key、字段映射、是否新增/更新等，只要不明确，就先问。
+- 所有这类流程约束与记忆内容统一使用中文记录。
+- 详见：`docs/确认优先规则.md`
