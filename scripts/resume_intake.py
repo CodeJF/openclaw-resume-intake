@@ -142,7 +142,7 @@ def main() -> int:
     ap.add_argument("--target-key", default="resume_intake_v1")
     ap.add_argument("--pdf-path", required=True)
     ap.add_argument("--work-dir", required=True)
-    ap.add_argument("--feishu-account", default="main")
+    ap.add_argument("--feishu-account", default="resume-intake")
     args = ap.parse_args()
 
     pdf_path = Path(args.pdf_path)
