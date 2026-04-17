@@ -7,3 +7,9 @@ tmp/
 resumes/
 input/
 .gitignore.bak.pre-migration
+HEARTBEAT.md
+IDENTITY.md
+SOUL.md
+TOOLS.md
+USER.md
+runtime/
