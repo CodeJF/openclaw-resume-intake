@@ -1,0 +1,24 @@
+{
+  // 恢复本机 Feishu 接入时，同时恢复 channel + bindings
+  channels: {
+    feishu: {
+      enabled: true,
+    },
+  },
+  bindings: [
+    {
+      agentId: 'main',
+      match: {
+        channel: 'feishu',
+        accountId: 'main',
+      },
+    },
+    {
+      agentId: 'interviewer',
+      match: {
+        channel: 'feishu',
+        accountId: 'interviewer',
+      },
+    },
+  ],
+}

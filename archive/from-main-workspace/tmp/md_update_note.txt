@@ -1,0 +1,1 @@
+Need safe per-file upload/replace on Alibaba Cloud workspace-resume-intake. Goal: translate markdown docs to Chinese descriptions, ensure .md filenames contain no Chinese, keep docs/confirm-first-rules.md as English filename, update references. Do not use large remote here-doc; use local file staging + scp/ssh per file.
