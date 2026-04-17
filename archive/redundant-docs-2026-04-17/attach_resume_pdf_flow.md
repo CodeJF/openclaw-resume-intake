@@ -1,0 +1,1 @@
+Implement attachment chain in workspace-resume-intake standard flow only. No live write to real business data. Need a script that, after create succeeds and obtains record_id, uploads local PDF via feishu_drive_file.upload, then updates bitable record with {"附件":[{"file_token":"..."}]}. Also document partial-success behavior.
