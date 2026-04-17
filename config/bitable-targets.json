@@ -1,10 +1,28 @@
 {
-  "default_target": "resume_intake_v1",
+  "default_target": "resume_intake_v2",
   "targets": {
     "resume_intake_v1": {
       "app_token": "Ft4cbSinbaxhOusgmzNcvwDUnWh",
       "table_id": "tblv3Pfr8Psw9Jr1",
       "business_label": "招聘进度管理 - 2025年应聘人员登记",
+      "allowed_actions": [
+        "record.create",
+        "record.update"
+      ],
+      "forbidden_tools": [
+        "feishu_bitable_app",
+        "feishu_bitable_app_table"
+      ],
+      "policy": {
+        "never_infer_table_from_label": true,
+        "must_use_fixed_identifiers": true,
+        "fail_closed_on_mismatch": true
+      }
+    },
+    "resume_intake_v2": {
+      "app_token": "KNgDb2I1Fahiw4sgAelch8ivnQe",
+      "table_id": "tblc5GtI7h1hDnNk",
+      "business_label": "招聘信息跟进表（2026）- 招聘进度管理",
       "allowed_actions": [
         "record.create",
         "record.update"

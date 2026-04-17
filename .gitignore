@@ -1,11 +1,11 @@
-# Python / local env
-.venv/
-__pycache__/
-*.pyc
-
-# Runtime temp artifacts
-tmp/
-workdir_*/
-
-# OS/editor noise
 .DS_Store
+.gitignore.bak.*
+.venv/
+**/.venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+tmp/
+*.log
+config.local.json
+config.local.json.bak
