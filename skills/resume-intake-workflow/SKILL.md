@@ -25,15 +25,18 @@ description: 用于固定简历录入流程的专用 skill：把收到的简历 
 ## 快速流程
 
 1. 先确认这是不是简历录入任务，而不是通用的 Bitable 操作。
-2. 如果需要看业务规则、目标注册表或写入顺序，读取 `references/business-rules.md`。
-3. 如果需要看批准字段、提取规则或归一化方式，读取 `references/field-mapping.md`。
-4. 如果需要产出受保护的执行计划，优先运行 `scripts/` 下的脚本，不要临时在上下文里重新推导 payload。
-5. 实际写入时，使用 OpenClaw 的一等飞书工具，不要直接走 tenant-token OpenAPI。
+2. 对 PDF 简历录入，默认走 **单入口脚本**：`scripts/tool_entry_resume_intake.py`。
+3. 使用脚本产物里的 `fields.json` / `create_payload.json` 作为字段与写入参数的真相源，不要临时手工猜字段。
+4. 实际写入时，使用 OpenClaw 的一等飞书工具，不要直接走 tenant-token OpenAPI。
+5. 除非脚本失败或字段明显缺失，否则不要切换到人工推导模式。
 
 ## 护栏
 
 - 除非用户明确要求注册新目标或切换目标，否则只使用固定业务目标。
 - 不得编造候选人数据；不确定的字段留空。
+- **不要把消息发送者姓名当作候选人姓名。** 候选人姓名只能来自简历文本或脚本抽取结果。
+- **不要为这个流程调用 `feishu_bitable_app_table_field.list` 做实时 schema 探索**，固定目标链路直接使用受保护脚本产物。
+- **不要手工拼接 create/update payload**，优先使用脚本生成的 payload。
 - 结果判定规则：
   - 字段创建成功 + 附件更新成功 => 完整成功
   - 字段创建成功 + 附件更新失败 => 部分成功
@@ -43,13 +46,12 @@ description: 用于固定简历录入流程的专用 skill：把收到的简历 
 
 ## 什么时候读什么
 
-- 需要目标注册表、写入策略、运行顺序或成功判定时，读取 `references/business-rules.md`。
-- 需要批准字段集合、提取启发式、归一化规则或示例时，读取 `references/field-mapping.md`。
+- 默认优先运行 `scripts/tool_entry_resume_intake.py`，不要先到处读脚本、列目录、试探流程。
 - 手里有 PDF，想提取纯文本时，运行 `scripts/extract_resume_text.py`。
 - 手里有简历文本，想生成保守字段 JSON 时，运行 `scripts/build_candidate_fields.py`。
 - 需要为批准目标生成校验过的 create/update payload 时，运行 `scripts/guarded_bitable_write.py`。
 - 已经拿到 `record_id` 和 `file_token`，想生成附件更新 payload 时，运行 `scripts/guarded_attachment_update.py`。
-- 想一次性生成端到端本地计划产物时，运行 `scripts/tool_entry_resume_intake.py`。
+- 只有在排查失败原因时，才读取 `references/business-rules.md` 或 `references/field-mapping.md`。
 - 上述读取和执行默认是内部动作，不需要逐步向用户播报。
 
 ## 执行模式

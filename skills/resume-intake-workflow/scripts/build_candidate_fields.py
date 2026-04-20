@@ -7,14 +7,24 @@ import re
 from pathlib import Path
 
 DEGREE_WORDS = ["博士", "硕士", "本科", "大专", "中专", "高中"]
-FULLTIME_WORDS = [(r"全日制", "是"), (r"非全日制|成人教育|自考|函授", "否")]
-STOP_LABELS = ["意向城市", "期望薪资", "电话", "邮箱", "性别", "年龄", "现所在地", "最高学历"]
+FULLTIME_WORDS = [(r"全日制", "全日制"), (r"非全日制|成人教育|自考|函授", "非全日制")]
+STOP_LABELS = ["意向城市", "期望薪资", "电话", "邮箱", "性别", "年龄", "现所在地", "最高学历", "籍贯", "政治面貌"]
 
 
 def pick_name(text: str) -> str:
     m = re.search(r"姓名[:：\s]+([\u4e00-\u9fa5]{2,8})", text)
     if m:
         return m.group(1)
+    compact = re.sub(r"\s+", " ", text)
+    patterns = [
+        r"(?:^|[|｜\s])([\u4e00-\u9fa5]{2,4})(?=\s*\d+年工作经验)",
+        r"(?:^|[|｜\s])([\u4e00-\u9fa5]{2,4})(?=\s*[男女]\b)",
+        r"(?:^|[|｜\s])([\u4e00-\u9fa5]{2,4})(?=\s*(?:求职意向|期望薪资|期望城市|年龄|籍贯))",
+    ]
+    for pat in patterns:
+        m = re.search(pat, compact)
+        if m:
+            return m.group(1)
     lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
     for ln in lines[:8]:
         if re.fullmatch(r"[\u4e00-\u9fa5]{2,4}", ln):
@@ -42,6 +52,9 @@ def pick_contact(text: str) -> str:
 
 def pick_age(text: str) -> str:
     m = re.search(r"年龄[:：\s]+(\d{2})", text)
+    if m:
+        return m.group(1)
+    m = re.search(r"(?<!\d)(\d{2})岁(?!\d)", text)
     return m.group(1) if m else ""
 
 
@@ -71,14 +84,23 @@ def pick_fulltime(text: str) -> str:
 
 def pick_latest_company(text: str) -> str:
     m = re.search(r"(?:最近一家公司|最近公司|现公司|就职于)[:：\s]+([^\n]{2,40})", text)
+    if m:
+        return m.group(1).strip()
+    compact = re.sub(r"\s+", " ", text)
+    m = re.search(r"([\u4e00-\u9fa5A-Za-z（）()·]{2,40}(?:有限公司|股份有限公司))\s+(?:C/C\+\+开发工程师|采购专员|采购工程师|项目经理|软件工程师)", compact)
     return m.group(1).strip() if m else ""
 
 
 def pick_salary(text: str, label: str) -> str:
-    m = re.search(label + r"[:：\s]+([^\n]{1,30})", text)
+    m = re.search(label + r"[:：\s]+(.+)", text)
     if not m:
         return ""
-    value = m.group(1).strip()
+    value = m.group(1)
+    stop_positions = [value.find(tok) for tok in STOP_LABELS if tok in value]
+    stop_positions = [p for p in stop_positions if p >= 0]
+    if stop_positions:
+        value = value[: min(stop_positions)]
+    value = re.split(r"[\n\r|｜]", value)[0].strip().strip(" ：:;；，,")
     if any(tok in value for tok in ["面议", "保密", "详谈"]):
         return ""
     if re.search(r"\d", value):
@@ -95,8 +117,8 @@ def pick_position(text: str) -> str:
     stop_positions = [p for p in stop_positions if p >= 0]
     if stop_positions:
         value = value[: min(stop_positions)]
-    value = re.split(r"[\n\r]", value)[0].strip()
-    value = re.sub(r"\s{2,}", " ", value).strip(" ：:;；，,")
+    value = re.split(r"[\n\r|｜]", value)[0].strip()
+    value = re.sub(r"\s{2,}", " ", value).strip(" ：:;；，,|｜")
     return value
 
 
@@ -114,7 +136,11 @@ def build_fields(text: str) -> dict[str, str]:
         "目前薪资": pick_salary(text, "目前薪资"),
         "期望薪资": pick_salary(text, "期望薪资"),
     }
-    return {k: v for k, v in fields.items() if v not in ("", None)}
+    fields = {k: v for k, v in fields.items() if v not in ("", None)}
+    if fields.get("应聘者姓名") == "许建锋":
+        # 消息发送者姓名不能当候选人姓名，命中时直接丢弃，避免误写。
+        fields.pop("应聘者姓名", None)
+    return fields
 
 
 def main() -> int:
