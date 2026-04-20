@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+from datetime import date
 from pathlib import Path
 
 DEGREE_WORDS = ["博士", "硕士", "本科", "大专", "中专", "高中"]
@@ -98,7 +99,17 @@ def pick_age(text: str) -> str:
     if m:
         return m.group(1)
     m = re.search(r"(?<!\d)(\d{2})岁(?!\d)", text)
-    return m.group(1) if m else ""
+    if m:
+        return m.group(1)
+    m = re.search(r"出生年月[:：\s]*(\d{4})\s*[年./-]\s*(\d{1,2})", text)
+    if m:
+        birth_year = int(m.group(1))
+        birth_month = int(m.group(2))
+        today = date.today()
+        age = today.year - birth_year - ((today.month, today.day) < (birth_month, 1))
+        if 16 <= age <= 80:
+            return str(age)
+    return ""
 
 
 def pick_degree(text: str) -> str:
