@@ -3,6 +3,10 @@
 __pycache__/
 *.pyc
 .openclaw/
+!.openclaw/
+!.openclaw/skills/
+!.openclaw/skills/resume-intake/
+!.openclaw/skills/resume-intake/**
 tmp/
 resumes/
 input/
