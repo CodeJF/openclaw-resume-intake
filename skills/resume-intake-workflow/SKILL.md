@@ -11,6 +11,12 @@ description: 用于固定简历录入流程的专用 skill：把收到的简历 
 
 默认路径要尽量收敛，只使用已经批准的目标和安全字段。如果目标、数据表、字段映射存在歧义，先停下来确认，不要猜。
 
+**路径规则：本文件里出现的相对路径，全部相对于当前 skill 目录解析。**
+也就是说：
+- `scripts/...` 指的是 `skills/resume-intake-workflow/scripts/...`
+- `references/...` 指的是 `skills/resume-intake-workflow/references/...`
+- **不要**去 workspace 根目录下找同名的 `scripts/`、`docs/`、`references/`
+
 ## 输出与沟通规则
 
 - 默认对用户只发送 **1 条最终回复**。
@@ -25,7 +31,7 @@ description: 用于固定简历录入流程的专用 skill：把收到的简历 
 ## 快速流程
 
 1. 先确认这是不是简历录入任务，而不是通用的 Bitable 操作。
-2. 对 PDF 简历录入，默认走 **单入口脚本**：`scripts/tool_entry_resume_intake.py`。
+2. 对 PDF 简历录入，默认走 **当前 skill 目录下** 的单入口脚本：`scripts/tool_entry_resume_intake.py`。
 3. 使用脚本产物里的 `fields.json` / `create_payload.json` 作为字段与写入参数的真相源，不要临时手工猜字段。
 4. 实际写入时，使用 OpenClaw 的一等飞书工具，不要直接走 tenant-token OpenAPI。
 5. 除非脚本失败或字段明显缺失，否则不要切换到人工推导模式。
@@ -50,8 +56,9 @@ description: 用于固定简历录入流程的专用 skill：把收到的简历 
 - 手里有 PDF，想提取纯文本时，运行 `scripts/extract_resume_text.py`。
 - 手里有简历文本，想生成保守字段 JSON 时，运行 `scripts/build_candidate_fields.py`。
 - 需要为批准目标生成校验过的 create/update payload 时，运行 `scripts/guarded_bitable_write.py`。
-- 已经拿到 `record_id` 和 `file_token`，想生成附件更新 payload 时，运行 `scripts/guarded_attachment_update.py`。
+- 已经拿到 `record_id` 和 `file_token`，想生成附件更新 payload时，运行 `scripts/guarded_attachment_update.py`。
 - 只有在排查失败原因时，才读取 `references/business-rules.md` 或 `references/field-mapping.md`。
+- 不要为了“找脚本”去扫描 workspace 根目录；如果本 skill 目录下缺文件，应直接报错并修 skill，而不是换路径乱跑。
 - 上述读取和执行默认是内部动作，不需要逐步向用户播报。
 
 ## 执行模式
