@@ -9,12 +9,37 @@ from pathlib import Path
 DEGREE_WORDS = ["博士", "硕士", "本科", "大专", "中专", "高中"]
 FULLTIME_WORDS = [(r"全日制", "全日制"), (r"非全日制|成人教育|自考|函授", "非全日制")]
 STOP_LABELS = ["意向城市", "期望薪资", "电话", "邮箱", "性别", "年龄", "现所在地", "最高学历", "籍贯", "政治面貌"]
+SENDER_NAME_BLOCKLIST = {"许建锋"}
+NON_NAME_WORDS = {
+    *DEGREE_WORDS,
+    "销售工程师",
+    "软件工程师",
+    "采购工程师",
+    "采购",
+    "产品经理",
+    "工程师",
+    "简历",
+    "姓名",
+    "联系方式",
+    "自动化",
+}
+
+
+def normalize_candidate_name(name: str) -> str:
+    name = re.sub(r"\s+", "", name or "")
+    if not re.fullmatch(r"[\u4e00-\u9fa5]{2,4}", name):
+        return ""
+    if name in SENDER_NAME_BLOCKLIST or name in NON_NAME_WORDS:
+        return ""
+    return name
 
 
 def pick_name(text: str) -> str:
     m = re.search(r"姓名[:：\s]+([\u4e00-\u9fa5]{2,8})", text)
     if m:
-        return m.group(1)
+        picked = normalize_candidate_name(m.group(1))
+        if picked:
+            return picked
     compact = re.sub(r"\s+", " ", text)
     patterns = [
         r"(?:^|[|｜\s])([\u4e00-\u9fa5]{2,4})(?=\s*\d+年工作经验)",
@@ -24,11 +49,29 @@ def pick_name(text: str) -> str:
     for pat in patterns:
         m = re.search(pat, compact)
         if m:
-            return m.group(1)
-    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
-    for ln in lines[:8]:
-        if re.fullmatch(r"[\u4e00-\u9fa5]{2,4}", ln):
-            return ln
+            picked = normalize_candidate_name(m.group(1))
+            if picked:
+                return picked
+    return ""
+
+
+def pick_name_from_filename(pdf_path: str | None) -> str:
+    if not pdf_path:
+        return ""
+    stem = Path(pdf_path).stem
+    stem = re.sub(r"^\[[^\]]+\]\s*", "", stem)
+    stem = re.sub(r"^【[^】]+】\s*", "", stem)
+    parts = [p for p in re.split(r"[_\-\s]+", stem) if p]
+    candidates: list[str] = []
+    if parts:
+        candidates.append(parts[0])
+    m = re.search(r"([\u4e00-\u9fa5]{2,4})", stem)
+    if m:
+        candidates.append(m.group(1))
+    for cand in candidates:
+        picked = normalize_candidate_name(cand)
+        if picked:
+            return picked
     return ""
 
 
@@ -109,7 +152,7 @@ def pick_salary(text: str, label: str) -> str:
 
 
 def pick_position(text: str) -> str:
-    m = re.search(r"(?:应聘岗位|求职意向|意向岗位)[:：\s]+(.+)", text)
+    m = re.search(r"(?:应聘岗位|求职意向|意向岗位|面试岗位)[:：\s]+(.+)", text)
     if not m:
         return ""
     value = m.group(1)
@@ -122,9 +165,10 @@ def pick_position(text: str) -> str:
     return value
 
 
-def build_fields(text: str) -> dict[str, str]:
+def build_fields(text: str, pdf_path: str | None = None) -> dict[str, str]:
+    candidate_name = pick_name(text) or pick_name_from_filename(pdf_path)
     fields = {
-        "应聘者姓名": pick_name(text),
+        "应聘者姓名": candidate_name,
         "年龄": pick_age(text),
         "应聘岗位": pick_position(text),
         "联系方式": pick_contact(text),
@@ -137,8 +181,7 @@ def build_fields(text: str) -> dict[str, str]:
         "期望薪资": pick_salary(text, "期望薪资"),
     }
     fields = {k: v for k, v in fields.items() if v not in ("", None)}
-    if fields.get("应聘者姓名") == "许建锋":
-        # 消息发送者姓名不能当候选人姓名，命中时直接丢弃，避免误写。
+    if fields.get("应聘者姓名") in SENDER_NAME_BLOCKLIST:
         fields.pop("应聘者姓名", None)
     return fields
 
@@ -147,12 +190,13 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Build conservative candidate fields JSON from resume text")
     ap.add_argument("resume_text_path")
     ap.add_argument("output_fields_json")
+    ap.add_argument("--pdf-path")
     args = ap.parse_args()
 
     src = Path(args.resume_text_path)
     dst = Path(args.output_fields_json)
     text = src.read_text(encoding="utf-8", errors="ignore")
-    fields = build_fields(text)
+    fields = build_fields(text, pdf_path=args.pdf_path)
     dst.parent.mkdir(parents=True, exist_ok=True)
     dst.write_text(json.dumps(fields, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(fields, ensure_ascii=False, indent=2))

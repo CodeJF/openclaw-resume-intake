@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 CFG = ROOT / "references" / "targets.json"
 ALLOWED_ACTIONS = {"create", "update"}
+REQUIRED_CREATE_FIELDS = {"应聘者姓名"}
 
 
 def load_cfg() -> dict:
@@ -30,6 +31,18 @@ def ensure_allowed(target_key: str, action: str, target: dict) -> None:
         raise SystemExit(f"DENY: update not allowed for target_key={target_key}")
 
 
+def normalize_fields(fields: dict, action: str) -> dict:
+    normalized = dict(fields)
+    age = normalized.get("年龄")
+    if isinstance(age, str) and age.strip().isdigit():
+        normalized["年龄"] = int(age.strip())
+    if action == "create":
+        missing = [key for key in REQUIRED_CREATE_FIELDS if not normalized.get(key)]
+        if missing:
+            raise SystemExit(f"DENY: missing required create fields: {', '.join(missing)}")
+    return normalized
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Generate guarded Bitable payload for an approved target")
     ap.add_argument("target_key")
@@ -43,6 +56,7 @@ def main() -> int:
     ensure_allowed(args.target_key, args.action, target)
 
     fields = json.loads(Path(args.fields_json).read_text(encoding="utf-8"))
+    fields = normalize_fields(fields, args.action)
     payload = {
         "target_key": args.target_key,
         "tool": "feishu_bitable_app_table_record",

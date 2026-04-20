@@ -34,7 +34,8 @@ description: 用于固定简历录入流程的专用 skill：把收到的简历 
 2. 对 PDF 简历录入，默认走 **当前 skill 目录下** 的单入口脚本：`scripts/tool_entry_resume_intake.py`。
 3. 使用脚本产物里的 `fields.json` / `create_payload.json` 作为字段与写入参数的真相源，不要临时手工猜字段。
 4. 实际写入时，使用 OpenClaw 的一等飞书工具，不要直接走 tenant-token OpenAPI。
-5. 除非脚本失败或字段明显缺失，否则不要切换到人工推导模式。
+5. 如果 `应聘者姓名` 缺失，直接停止创建并向用户说明需要人工确认，不允许创建无姓名记录。
+6. 除非脚本失败或字段明显缺失，否则不要切换到人工推导模式。
 
 ## 护栏
 
@@ -43,6 +44,7 @@ description: 用于固定简历录入流程的专用 skill：把收到的简历 
 - **不要把消息发送者姓名当作候选人姓名。** 候选人姓名只能来自简历文本或脚本抽取结果。
 - **不要为这个流程调用 `feishu_bitable_app_table_field.list` 做实时 schema 探索**，固定目标链路直接使用受保护脚本产物。
 - **不要手工拼接 create/update payload**，优先使用脚本生成的 payload。
+- 上传工具一旦返回成功和 `file_token`，就直接进入附件回填，不要在用户对话里长时间 grep 日志、来回试探或做内联排查。
 - 结果判定规则：
   - 字段创建成功 + 附件更新成功 => 完整成功
   - 字段创建成功 + 附件更新失败 => 部分成功
@@ -53,6 +55,7 @@ description: 用于固定简历录入流程的专用 skill：把收到的简历 
 ## 什么时候读什么
 
 - 默认优先运行 `scripts/tool_entry_resume_intake.py`，不要先到处读脚本、列目录、试探流程。
+- `feishu_drive_file.upload` 成功后，立即使用返回的 `file_token` 继续 `scripts/guarded_attachment_update.py` 和后续 update，不要中途改成日志排查模式。
 - 手里有 PDF，想提取纯文本时，运行 `scripts/extract_resume_text.py`。
 - 手里有简历文本，想生成保守字段 JSON 时，运行 `scripts/build_candidate_fields.py`。
 - 需要为批准目标生成校验过的 create/update payload 时，运行 `scripts/guarded_bitable_write.py`。
@@ -92,6 +95,7 @@ runtime/inbound/<message_id>/
 - 完整成功：一句话说明已录入成功。
 - 部分成功：一句话说明记录已创建，但附件失败。
 - 失败：一句话说明失败点。
+- 禁止在同一条简历录入会话里连续发送多条“开始录入”“开始写入”“继续修复”之类的过程消息。
 - 除非用户要求详情，否则不要附长表格、长清单、长过程说明。
 
 ## 后续扩展说明
