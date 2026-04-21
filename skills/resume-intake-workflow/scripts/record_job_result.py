@@ -34,6 +34,20 @@ def main() -> int:
     }
     out_path = job_dir / "result.json"
     out_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    checkpoint_payload = {
+        "job_id": payload["job_id"],
+        "source_name": payload["source_name"],
+        "stage": "completed" if args.status in {"success", "partial"} else "failed",
+        "record_id": payload["record_id"],
+        "file_token": payload["file_token"],
+        "reason": payload["reason"],
+        "message": payload["message"],
+        "work_dir": str(job_dir),
+    }
+    checkpoint_path = job_dir / "checkpoint.json"
+    checkpoint_path.write_text(json.dumps(checkpoint_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
     print(json.dumps(payload, ensure_ascii=False, indent=2))
     return 0
 

@@ -245,9 +245,41 @@ def pick_school(text: str) -> str:
     return m.group(1) if m else ""
 
 
+def clean_major_value(value: str) -> str:
+    value = re.sub(r"\s+", " ", value or "").strip(" ：:;；，,。")
+    value = re.split(r"(?:主修课程|课程|工作经历|项目经历|教育背景|个人技能|荣誉奖项|校园经历|内容[:：]|业绩[:：]|公司[:：]|岗位[:：]|时间[:：]|联系方式[:：]|电话[:：]|邮箱[:：])", value)[0].strip(" ：:;；，,。")
+    if not value:
+        return ""
+    if re.fullmatch(r"\d{4}(?:[./-]\d{1,2})?(?:\s*[-~至到]\s*\d{4}(?:[./-]\d{1,2})?)?", value):
+        return ""
+    if re.search(r"\d{4}\s*[-~至到]\s*\d{4}", value):
+        return ""
+    if re.search(r"主修课程", value):
+        return ""
+    school_prefix = re.match(r"^([\u4e00-\u9fa5A-Za-z（）()·]{2,20}(?:大学|学院))(.*专业)$", value)
+    if school_prefix:
+        value = school_prefix.group(2).strip()
+    value = re.sub(r"^(?:博士|硕士|本科|大专|中专|高中)", "", value).strip()
+    if len(value) > 20:
+        return ""
+    return value
+
+
 def pick_major(text: str) -> str:
-    m = re.search(r"专业[:：\s]+([^\n]{2,30})", text)
-    return m.group(1).strip() if m else ""
+    compact = compact_resume_text(text)
+
+    patterns = [
+        r"(?:专业|所学专业|就读专业)[:：]\s*([^\n|｜]{2,30})",
+        r"(?:大学|学院|学校)\s*([\u4e00-\u9fa5A-Za-z/＋+（）()·]{2,20}专业)(?=\s|\d|$)",
+        r"([\u4e00-\u9fa5A-Za-z/＋+（）()·]{2,20}专业)(?=\s*(?:\d{4}|主修课程|$))",
+    ]
+    for pattern in patterns:
+        for match in re.finditer(pattern, compact):
+            raw = match.group(1).strip()
+            cleaned = clean_major_value(raw)
+            if cleaned:
+                return cleaned
+    return ""
 
 
 def pick_fulltime(text: str) -> str:

@@ -94,6 +94,10 @@ def discover_inputs(input_path: Path, staging_dir: Path) -> list[IntakeInput]:
     raise SystemExit(f"仅支持 PDF 或 ZIP 输入: {input_path}")
 
 
+def load_json(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def build_job_plan(target_key: str, intake_input: IntakeInput, jobs_dir: Path, index: int) -> dict:
     job_id = f"job-{index:03d}-{safe_slug(Path(intake_input.source_name).stem)}"
     job_dir = jobs_dir / job_id
@@ -105,25 +109,43 @@ def build_job_plan(target_key: str, intake_input: IntakeInput, jobs_dir: Path, i
     else:
         normalized_pdf_path = intake_input.pdf_path
 
-    proc = run([
-        sys.executable,
-        str(SINGLE_PLAN),
-        "--target-key",
-        target_key,
-        "--pdf-path",
-        str(normalized_pdf_path),
-        "--work-dir",
-        str(job_dir),
-    ])
-    plan = json.loads(proc.stdout)
-    return {
+    plan_path = job_dir / "tool_plan.json"
+    if plan_path.exists():
+        plan = load_json(plan_path)
+    else:
+        proc = run([
+            sys.executable,
+            str(SINGLE_PLAN),
+            "--target-key",
+            target_key,
+            "--pdf-path",
+            str(normalized_pdf_path),
+            "--work-dir",
+            str(job_dir),
+        ])
+        plan = json.loads(proc.stdout)
+
+    result_path = job_dir / "result.json"
+    checkpoint_path = job_dir / "checkpoint.json"
+    status = "planned"
+    checkpoint = None
+    if result_path.exists():
+        result = load_json(result_path)
+        status = result.get("status") or "planned"
+    elif checkpoint_path.exists():
+        checkpoint = load_json(checkpoint_path)
+
+    payload = {
         "job_id": job_id,
         "source_name": intake_input.source_name,
         "pdf_path": str(normalized_pdf_path),
         "work_dir": str(job_dir),
         "plan": plan,
-        "status": "planned",
+        "status": status,
     }
+    if checkpoint:
+        payload["checkpoint"] = checkpoint
+    return payload
 
 
 def clamp_workers(requested: int, item_count: int) -> int:
@@ -132,13 +154,25 @@ def clamp_workers(requested: int, item_count: int) -> int:
 
 def summarize_items(items: Iterable[dict]) -> dict:
     results = list(items)
-    success = sum(1 for item in results if item.get("status") == "planned")
-    failed = sum(1 for item in results if item.get("status") == "failed")
-    return {
+    summary = {
         "total": len(results),
-        "planned": success,
-        "failed": failed,
+        "planned": 0,
+        "success": 0,
+        "partial": 0,
+        "failed": 0,
+        "checkpointed": 0,
     }
+    for item in results:
+        status = item.get("status") or "planned"
+        checkpoint = item.get("checkpoint") or {}
+        if status in {"success", "partial", "failed"}:
+            summary[status] += 1
+            continue
+        if checkpoint.get("stage") in {"created", "uploaded", "attachment_updated"}:
+            summary["checkpointed"] += 1
+        else:
+            summary["planned"] += 1
+    return summary
 
 
 def main() -> int:
@@ -214,6 +248,18 @@ def main() -> int:
                     "reason"
                 ]
             },
+            "checkpoint_file_contract": {
+                "path_pattern": "jobs/<job_id>/checkpoint.json",
+                "allowed_stage": ["planned", "created", "uploaded", "attachment_updated", "completed", "failed"],
+                "recommended_fields": [
+                    "job_id",
+                    "source_name",
+                    "stage",
+                    "record_id",
+                    "file_token",
+                    "reason"
+                ]
+            },
             "final_summary_script": f"python3 {ROOT / 'summarize_batch_results.py'} --work-dir {work_dir}",
         },
         "must_follow": [
@@ -222,7 +268,9 @@ def main() -> int:
             "Only execute a job's create/upload/update steps using that job's own generated plan and artifacts.",
             "Do not execute feishu_bitable_app_table_record.create, feishu_drive_file.upload, or feishu_bitable_app_table_record.update inside a subagent or isolated session. Those writes must run in the original Feishu main session so user auth context is preserved.",
             "If you split work for speed, child tasks may only produce local artifacts such as resume.txt, fields.json, create_payload.json, or validation outputs. The Feishu write steps stay in the main session.",
+            "Immediately after create succeeds, write jobs/<job_id>/checkpoint.json with stage=created and the record_id. Immediately after upload succeeds, update the checkpoint to stage=uploaded with the file_token.",
             "After each job finishes, write jobs/<job_id>/result.json before moving on to the final summary step.",
+            "If a run is interrupted, rerun this script with the same work_dir and resume from jobs that have checkpoint.json but no final result.json. Do not create a duplicate record when checkpoint.record_id already exists.",
             "If some jobs fail during planning, continue with the successful ones and report partial success.",
             "For ZIP inputs, ignore non-PDF files silently unless the user explicitly asks for validation details.",
         ],

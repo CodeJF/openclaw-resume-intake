@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 
-STATUS_BUCKETS = ("success", "partial", "failed", "planned")
+STATUS_BUCKETS = ("success", "partial", "failed", "planned", "checkpointed")
 
 
 def load_json(path: Path) -> dict:
@@ -17,6 +17,7 @@ def normalize_result(job_dir: Path) -> dict:
     result_path = job_dir / "result.json"
     error_path = job_dir / "error.json"
     tool_plan_path = job_dir / "tool_plan.json"
+    checkpoint_path = job_dir / "checkpoint.json"
 
     if result_path.exists():
         result = load_json(result_path)
@@ -30,6 +31,15 @@ def normalize_result(job_dir: Path) -> dict:
         error.setdefault("work_dir", str(job_dir))
         error.setdefault("status", "failed")
         return error
+
+    checkpoint = None
+    if checkpoint_path.exists():
+        checkpoint = load_json(checkpoint_path)
+        checkpoint.setdefault("job_id", job_dir.name)
+        checkpoint.setdefault("work_dir", str(job_dir))
+        checkpoint["status"] = "checkpointed"
+        checkpoint.setdefault("reason", f"执行中断，可从 stage={checkpoint.get('stage', 'unknown')} 续跑")
+        return checkpoint
 
     source_name = ""
     if tool_plan_path.exists():

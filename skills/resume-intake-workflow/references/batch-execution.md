@@ -49,18 +49,41 @@ python3 scripts/batch_resume_intake.py --input-path <zip_or_pdf> --work-dir runt
 2. 调用：
    - `feishu_bitable_app_table_record.create`
 3. 成功后拿到 `record_id`
-4. 从 `item.plan.steps[1]` 读取 upload 参数
-5. 调用：
+4. 立刻写 checkpoint：
+
+```bash
+python3 scripts/job_checkpoint.py write \
+  --job-dir <job_dir> \
+  --job-id <job_id> \
+  --source-name <source_name> \
+  --stage created \
+  --record-id <record_id>
+```
+
+5. 从 `item.plan.steps[1]` 读取 upload 参数
+6. 调用：
    - `feishu_drive_file.upload`
-6. 成功后拿到 `file_token`
-7. 运行：
+7. 成功后拿到 `file_token`
+8. 立刻更新 checkpoint：
+
+```bash
+python3 scripts/job_checkpoint.py write \
+  --job-dir <job_dir> \
+  --job-id <job_id> \
+  --source-name <source_name> \
+  --stage uploaded \
+  --record-id <record_id> \
+  --file-token <file_token>
+```
+
+9. 运行：
 
 ```bash
 python3 scripts/guarded_attachment_update.py --target-key <target_key> --record-id <record_id> --file-token <file_token>
 ```
 
-8. 读取 update payload
-9. 调用：
+10. 读取 update payload
+11. 调用：
    - `feishu_bitable_app_table_record.update`
 
 ### 第 4 步，每个 job 落 result.json
@@ -82,6 +105,13 @@ python3 scripts/record_job_result.py \
 - create 成功 + 附件成功 => `success`
 - create 成功 + 附件失败 => `partial`
 - create 失败 => `failed`
+
+## 中断后的续跑规则
+
+- 如果会话中断，但 `jobs/<job_id>/checkpoint.json` 已存在且没有 `result.json`，则该 job 视为**可续跑**。
+- `stage=created`：说明记录已创建，续跑时**不要再次 create**，直接从 upload 开始。
+- `stage=uploaded`：说明文件已上传，续跑时**不要再次 create/upload**，直接生成附件 update payload 并 update。
+- 重新运行 `batch_resume_intake.py` 时，必须复用同一个 `work_dir`，这样它会带出已有 checkpoint/result 状态。
 
 ### 第 5 步，生成总汇总
 
