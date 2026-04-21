@@ -28,20 +28,23 @@ description: 用于固定简历录入流程的专用 skill：把收到的简历 
   1. 真的卡住，需要用户决策或补信息。
   2. 执行时间明显较长，且确实需要告知“处理中”。即使如此，也只发 **1 条** 简短进度，不要连续发。
 - 最终回复保持简洁，优先用 1 到 4 行说明：成功 / 部分成功 / 失败，必要时补一行原因。
+- ZIP 批量模式下，优先输出聚合结果，例如“已处理 6 份，成功 5 份，部分成功 1 份”；除非用户要求，不要逐条展开内部细节。
 - 不要复述大段流程、规则、字段说明，除非用户明确要求展开。
 - 如果用户只问一个窄问题，例如“有没有这个 skill”“读一下 skill”“现在怎么样了”，只回答问题本身，不要擅自进入完整 workflow 解说。
 
 ## 快速流程
 
 1. 先确认这是不是简历录入任务，而不是通用的 Bitable 操作。
-2. 对 PDF 简历录入，默认走 **当前 skill 目录下** 的单入口脚本：`scripts/resume_intake_tool_plan.py`。
-3. 使用脚本产物里的 `fields.json` / `create_payload.json` 作为字段与写入参数的真相源，不要临时手工猜字段。
-4. **create 阶段必须原样使用 `create_payload.json` 里的 `fields` 对象。** 不要把 `联系方式` 擅自拆成 `手机` / `邮箱`，也不要因为主观猜测字段不存在就删除 payload 里已有字段。
-5. 只有在飞书工具明确返回字段不存在或类型不匹配，而且你已经先核对过真实 schema 时，才允许调整字段；否则一律按 payload 执行。
-6. 实际写入时，使用 OpenClaw 的一等飞书工具，不要直接走 tenant-token OpenAPI。
-7. 附件上传必须走多维表格附件模式，也就是 `feishu_drive_file.upload` 时传 `parent_type=bitable_file`，`parent_node=<app_token>`，不要先按普通云盘文件上传。
-8. 如果 `应聘者姓名` 缺失，直接停止创建并向用户说明需要人工确认，不允许创建无姓名记录。
-9. 除非脚本失败或字段明显缺失，否则不要切换到人工推导模式。
+2. 如果输入是 **单个 PDF**，默认走 **当前 skill 目录下** 的单入口脚本：`scripts/resume_intake_tool_plan.py`。
+3. 如果输入是 **单个 ZIP**，并且 ZIP 内含多份 PDF，默认走批量入口：`scripts/batch_resume_intake.py`。
+4. ZIP 模式下，先生成 `batch_plan.json`，再只执行其中 `status=planned` 的 job；不要跳过计划层直接手工批量写表。
+5. 使用脚本产物里的 `fields.json` / `create_payload.json` / `batch_plan.json` 作为字段与写入参数的真相源，不要临时手工猜字段。
+6. **create 阶段必须原样使用生成 payload 里的 `fields` 对象。** 不要把 `联系方式` 擅自拆成 `手机` / `邮箱`，也不要因为主观猜测字段不存在就删除 payload 里已有字段。
+7. 只有在飞书工具明确返回字段不存在或类型不匹配，而且你已经先核对过真实 schema 时，才允许调整字段；否则一律按 payload 执行。
+8. 实际写入时，使用 OpenClaw 的一等飞书工具，不要直接走 tenant-token OpenAPI。
+9. 附件上传必须走多维表格附件模式，也就是 `feishu_drive_file.upload` 时传 `parent_type=bitable_file`，`parent_node=<app_token>`，不要先按普通云盘文件上传。
+10. 如果 `应聘者姓名` 缺失，直接停止创建并向用户说明需要人工确认，不允许创建无姓名记录。
+11. 除非脚本失败或字段明显缺失，否则不要切换到人工推导模式。
 
 ## 护栏
 
@@ -63,13 +66,14 @@ description: 用于固定简历录入流程的专用 skill：把收到的简历 
 
 ## 什么时候读什么
 
-- 默认优先运行 `scripts/resume_intake_tool_plan.py`，不要先到处读脚本、列目录、试探流程。
+- 单个 PDF 默认优先运行 `scripts/resume_intake_tool_plan.py`；单个 ZIP 默认优先运行 `scripts/batch_resume_intake.py`。不要先到处读脚本、列目录、试探流程。
 - `feishu_drive_file.upload` 必须使用 `parent_type=bitable_file`、`parent_node=<app_token>`。成功后，立即使用返回的 `file_token` 继续 `scripts/guarded_attachment_update.py` 和后续 update，不要中途改成日志排查模式。
 - 手里有 PDF，想提取纯文本时，运行 `scripts/extract_resume_text.py`。
 - 手里有简历文本，想生成保守字段 JSON 时，运行 `scripts/build_candidate_fields.py`。
 - 需要为批准目标生成校验过的 create/update payload 时，运行 `scripts/guarded_bitable_write.py`。
 - 已经拿到 `record_id` 和 `file_token`，想生成附件更新 payload时，运行 `scripts/guarded_attachment_update.py`。
 - 只有在排查失败原因时，才读取 `references/business-rules.md` 或 `references/field-mapping.md`。
+- ZIP 批量执行细节和 result.json 约定，读取 `references/batch-execution.md`。
 - 不要为了“找脚本”去扫描 workspace 根目录；如果本 skill 目录下缺文件，应直接报错并修 skill，而不是换路径乱跑。
 - 上述读取和执行默认是内部动作，不需要逐步向用户播报。
 
@@ -77,12 +81,22 @@ description: 用于固定简历录入流程的专用 skill：把收到的简历 
 
 ### 1）本地规划
 
-优先使用本地脚本产出稳定工件：
+优先使用本地脚本产出稳定工件。
 
+单 PDF：
 - `resume.txt`
 - `fields.json`
 - `create_payload.json`
 - `tool_plan.json`
+
+ZIP 批量：
+- `batch_plan.json`
+- `batch_result.json`
+- `jobs/job-xxx/resume.txt`
+- `jobs/job-xxx/fields.json`
+- `jobs/job-xxx/create_payload.json`
+- `jobs/job-xxx/tool_plan.json`
+- `jobs/job-xxx/result.json`
 
 推荐工作目录模式：
 
@@ -98,12 +112,22 @@ runtime/inbound/<message_id>/
 - `feishu_drive_file.upload`（附件模式：`parent_type=bitable_file`，`parent_node=app_token`）
 - `feishu_bitable_app_table_record.update`
 
+ZIP 批量模式下：
+- 先运行 `scripts/batch_resume_intake.py` 生成 `batch_plan.json`
+- 再按 `batch_plan.json.items[*].plan` 分 job 执行 create / upload / attachment update
+- 默认并发度控制在 2 到 3
+- 每个 job 完成后，用 `scripts/record_job_result.py` 写入 `jobs/<job_id>/result.json`
+- 所有 job 完成后，运行 `scripts/summarize_batch_results.py` 生成 `batch_result.json`
+- 只有拿到 `batch_result.json` 后，才给用户发最终汇总
+- 对用户默认只回 1 条汇总；必要时最多加 1 条简短“处理中”
+
 ### 3）对用户反馈
 
 - 默认只在流程结束后回复一次。
 - 完整成功：一句话说明已录入成功。
 - 部分成功：一句话说明记录已创建，但附件失败。
 - 失败：一句话说明失败点。
+- ZIP 批量模式优先回复聚合结果，例如“已处理 5 份，成功 4 份，部分成功 1 份”。
 - 禁止在同一条简历录入会话里连续发送多条“开始录入”“开始写入”“继续修复”之类的过程消息。
 - 禁止发送“pypdf 未安装”“现在保存文本”“现在执行写入”“附件需要绑定到 bitable，重新上传”这类过程废话。
 - 如果姓名或年龄因 PDF 字符间距、OCR 断裂而抽取异常，先重跑当前 skill 自带脚本的稳健提取逻辑；只有脚本仍拿不准时，才进入人工确认。

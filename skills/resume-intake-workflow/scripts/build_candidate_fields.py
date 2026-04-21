@@ -61,6 +61,33 @@ NON_NAME_WORDS = {
     "联系方式",
     "自动化",
 }
+NAME_PREFIX_BLACKLIST = (
+    "熟练",
+    "熟悉",
+    "掌握",
+    "了解",
+    "负责",
+    "从事",
+    "深圳",
+    "广州",
+    "上海",
+    "北京",
+    "武汉",
+    "成都",
+    "苏州",
+    "杭州",
+    "东莞",
+    "佛山",
+    "南京",
+    "重庆",
+    "天津",
+    "西安",
+    "厦门",
+    "长沙",
+    "郑州",
+    "青岛",
+    "宁波",
+)
 
 
 def compact_resume_text(text: str) -> str:
@@ -90,6 +117,10 @@ def normalize_candidate_name(name: str) -> str:
     if any(suffix in name for suffix in NAME_SUFFIX_BLACKLIST):
         return ""
     if any(word in name for word in TITLE_HINT_WORDS):
+        return ""
+    if any(name.startswith(prefix) for prefix in NAME_PREFIX_BLACKLIST):
+        return ""
+    if name.endswith(("公司", "科技", "学院", "大学", "城市")):
         return ""
     return name
 
@@ -178,13 +209,19 @@ def pick_age(text: str) -> str:
     normalized = compact_resume_text(text)
     dense = dense_resume_text(text)
     for variant in (normalized, dense):
-        m = re.search(r"年龄[:：]?(\d{2})", variant)
+        m = re.search(r"年龄\s*[:：]?\s*(\d{2})", variant)
         if m:
             return m.group(1)
-        m = re.search(r"(?<!\d)(\d{2})岁(?!\d)", variant)
+        m = re.search(r"年龄\s*[:：]?\s*(\d)\s*(\d)", variant)
+        if m:
+            return f"{m.group(1)}{m.group(2)}"
+        m = re.search(r"(?<!\d)(\d{2})\s*岁(?!\d)", variant)
         if m:
             return m.group(1)
-        m = re.search(r"(?:出生年月|出生日期|生日|出生)[:：]?(\d{4})[年./-]?(\d{1,2})(?:[月./-]?(\d{1,2}))?", variant)
+        m = re.search(r"(?<!\d)(\d)\s*(\d)\s*岁(?!\d)", variant)
+        if m:
+            return f"{m.group(1)}{m.group(2)}"
+        m = re.search(r"(?:出生年月|出生日期|生日|出生)\s*[:：]?\s*(\d{4})[年./-]?(\d{1,2})(?:[月./-]?(\d{1,2}))?", variant)
         if m:
             birth_year = int(m.group(1))
             birth_month = int(m.group(2))
@@ -261,7 +298,9 @@ def pick_position(text: str) -> str:
 
 
 def build_fields(text: str, pdf_path: str | None = None) -> dict[str, str]:
-    candidate_name = pick_name(text) or pick_name_from_filename(pdf_path)
+    candidate_name = pick_name(text)
+    if not candidate_name:
+        candidate_name = pick_name_from_filename(pdf_path)
     fields = {
         "应聘者姓名": candidate_name,
         "年龄": pick_age(text),
