@@ -26,6 +26,8 @@
 - 只执行 `batch_plan.json` 里 `status=planned` 的 job。
 - 每个 job 必须使用自己的 `tool_plan.json`、自己的 work_dir、自己的中间工件。
 - 默认并发度控制在 2 到 3，不要为了追求速度把批量写入并发开得太高。
+- **不要把 Feishu 写入步骤交给 subagent / isolated session。**
+- 如果为了提速使用子任务，子任务最多只负责本地工件生成，例如 `resume.txt`、`fields.json`、`create_payload.json`、校验结果；真正的 `feishu_bitable_app_table_record.create`、`feishu_drive_file.upload`、`feishu_bitable_app_table_record.update` 必须回到原始 Feishu 主会话执行。
 - 每个 job 执行完后，必须立刻写 `jobs/<job_id>/result.json`，不要把结果只留在聊天上下文里。
 - 所有 job 完成后，必须生成 `batch_result.json`，再给用户发最终汇总。
 - 用户侧默认只发 1 条最终汇总；只有确实耗时较长时，才额外发 1 条简短“处理中”。

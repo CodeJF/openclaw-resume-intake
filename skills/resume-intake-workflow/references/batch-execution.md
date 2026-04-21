@@ -15,6 +15,8 @@
 - 默认并发度建议 `2` 到 `3`。
 - 每个 job 必须独立使用自己的 `tool_plan.json` 和工件目录。
 - 对用户默认只发 1 条最终汇总；必要时最多再加 1 条“处理中”。
+- **Feishu 写入必须留在原始主会话。不要把 `feishu_bitable_app_table_record.create`、`feishu_drive_file.upload`、`feishu_bitable_app_table_record.update` 放进 subagent / isolated session。**
+- 如果要拆子任务提速，子任务只做本地解析、字段抽取、payload 生成、结果校验；主会话负责最终 create / upload / update。
 
 ## 执行顺序
 
@@ -40,6 +42,8 @@ python3 scripts/batch_resume_intake.py --input-path <zip_or_pdf> --work-dir runt
 ### 第 3 步，对每个 job 执行完整闭环
 
 对每个 planned job：
+
+> 这一步必须在收到用户消息的主 Feishu 会话里执行，不要切到 subagent。
 
 1. 从 `item.plan.steps[0]` 读取 create 参数
 2. 调用：
@@ -116,3 +120,4 @@ python3 scripts/summarize_batch_results.py --work-dir runtime/inbound/<message_i
 - 不要在用户对话里直播每个 job 的中间步骤
 - 不要因为一个 job 失败就放弃整个 ZIP，其余 job 继续做
 - 不要在 ZIP 模式里临时改字段名或脱离 `tool_plan.json` 手工拼 payload
+- 不要让 subagent 直接调用 Feishu 用户态写工具，即使它看起来拿到了完整 job 参数也不行

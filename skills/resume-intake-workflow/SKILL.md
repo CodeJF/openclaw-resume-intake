@@ -61,6 +61,7 @@ description: 用于固定简历录入流程的专用 skill：把收到的简历 
   - 字段创建成功 + 附件更新成功 => 完整成功
   - 字段创建成功 + 附件更新失败 => 部分成功
   - 字段创建失败 => 失败
+- 如果 ZIP 批量运行里出现类似 `base:record:create`、`offline_access`、`当前应用仅限所有者使用` 之类此前单 PDF 并不稳定复现的权限报错，先检查是不是错误地把 Feishu 写入放进了 subagent，而不是立刻假定开放平台权限真的缺失。
 - 在固定链路里，只允许对批准目标执行记录 `create` 和附件字段 `update`。
 - 不要把这个 skill 用于生产链路中的泛化表发现、广义搜索或 schema 探索。
 
@@ -116,6 +117,9 @@ ZIP 批量模式下：
 - 先运行 `scripts/batch_resume_intake.py` 生成 `batch_plan.json`
 - 再按 `batch_plan.json.items[*].plan` 分 job 执行 create / upload / attachment update
 - 默认并发度控制在 2 到 3
+- **不要把 create / upload / update 这三个 Feishu 写入步骤放到 subagent、isolated session、或脱离原始 Feishu 对话上下文的子任务里执行。**
+- 如果为了提速需要拆分任务，子任务只允许做本地规划与文件工件生成，不允许直接调用 `feishu_bitable_app_table_record.create`、`feishu_drive_file.upload`、`feishu_bitable_app_table_record.update`。
+- 真正的 Feishu 写入必须由收到用户消息的主会话执行，这样才能稳定复用当前用户的授权上下文。
 - 每个 job 完成后，用 `scripts/record_job_result.py` 写入 `jobs/<job_id>/result.json`
 - 所有 job 完成后，运行 `scripts/summarize_batch_results.py` 生成 `batch_result.json`
 - 只有拿到 `batch_result.json` 后，才给用户发最终汇总

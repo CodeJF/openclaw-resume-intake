@@ -220,6 +220,8 @@ def main() -> int:
             "Keep user-visible replies consolidated. Prefer one final summary, with at most one short processing notice if the run is long.",
             "Treat each planned item independently. Do not reuse one resume's artifacts for another.",
             "Only execute a job's create/upload/update steps using that job's own generated plan and artifacts.",
+            "Do not execute feishu_bitable_app_table_record.create, feishu_drive_file.upload, or feishu_bitable_app_table_record.update inside a subagent or isolated session. Those writes must run in the original Feishu main session so user auth context is preserved.",
+            "If you split work for speed, child tasks may only produce local artifacts such as resume.txt, fields.json, create_payload.json, or validation outputs. The Feishu write steps stay in the main session.",
             "After each job finishes, write jobs/<job_id>/result.json before moving on to the final summary step.",
             "If some jobs fail during planning, continue with the successful ones and report partial success.",
             "For ZIP inputs, ignore non-PDF files silently unless the user explicitly asks for validation details.",
