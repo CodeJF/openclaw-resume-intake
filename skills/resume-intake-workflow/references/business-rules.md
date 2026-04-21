@@ -23,7 +23,7 @@
 当飞书用户上传 PDF 简历时，默认生产动作是：
 
 1. 在批准的多维表格目标中创建候选人记录
-2. 上传原始 PDF
+2. 以多维表格附件模式上传原始 PDF（`parent_type=bitable_file`，`parent_node=app_token`）
 3. 使用上传后的 file token 回填已创建记录的 `附件` 字段
 
 ## 安全写入范围
@@ -54,7 +54,7 @@
 3. 生成保守字段 JSON
 4. 生成受保护的 create payload
 5. 执行 create
-6. 上传原始 PDF
+6. 以 `parent_type=bitable_file`、`parent_node=app_token` 上传原始 PDF
 7. 生成受保护的附件 update payload
 8. 执行 update
 9. 汇报结果

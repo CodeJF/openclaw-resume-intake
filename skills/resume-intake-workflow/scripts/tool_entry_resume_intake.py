@@ -60,6 +60,7 @@ def main() -> int:
         "fields_preview": create_payload["fields"],
         "must_follow": [
             "Do not create a record when 应聘者姓名 is missing.",
+            "Upload the PDF as a Bitable attachment using parent_type=bitable_file and parent_node=<app_token>. Do not use a generic cloud-drive upload for this step.",
             "After feishu_drive_file.upload succeeds, use the returned file_token directly. Do not pause to grep logs or debug unless the upload tool itself returned an error.",
             "After record create + file upload succeed, immediately run guarded_attachment_update.py and then feishu_bitable_app_table_record.update.",
             "Do not send step-by-step progress messages. Send one final result only, unless blocked.",
@@ -83,6 +84,8 @@ def main() -> int:
                 "action": "upload",
                 "params": {
                     "file_path": str(pdf_path),
+                    "parent_type": "bitable_file",
+                    "parent_node": create_payload["app_token"],
                 },
                 "expect": "file_token",
             },

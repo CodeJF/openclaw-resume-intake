@@ -11,13 +11,50 @@ DEGREE_WORDS = ["博士", "硕士", "本科", "大专", "中专", "高中"]
 FULLTIME_WORDS = [(r"全日制", "全日制"), (r"非全日制|成人教育|自考|函授", "非全日制")]
 STOP_LABELS = ["意向城市", "期望薪资", "电话", "邮箱", "性别", "年龄", "现所在地", "最高学历", "籍贯", "政治面貌"]
 SENDER_NAME_BLOCKLIST = {"许建锋"}
-NON_NAME_WORDS = {
-    *DEGREE_WORDS,
+NAME_SUFFIX_BLACKLIST = ("简历", "个人简历", "候选人", "应聘", "求职")
+TITLE_HINT_WORDS = (
+    "经理",
+    "工程师",
+    "主管",
+    "专员",
+    "助理",
+    "总监",
+    "开发",
+    "设计",
+    "销售",
+    "采购",
+    "运营",
+    "产品",
+    "结构",
+    "软件",
+    "硬件",
+    "项目",
+    "客服",
+    "人事",
+    "行政",
+    "财务",
+    "会计",
+    "老师",
+    "顾问",
+)
+NAME_CONTEXT_STOPWORDS = {
+    "非党员",
+    "党员",
+    "团员",
+    "群众",
+    "干部",
+    "项目经理",
+    "产品经理",
     "销售工程师",
     "软件工程师",
+    "结构工程师",
     "采购工程师",
+    "解决方案经理",
+}
+NON_NAME_WORDS = {
+    *DEGREE_WORDS,
+    *NAME_CONTEXT_STOPWORDS,
     "采购",
-    "产品经理",
     "工程师",
     "简历",
     "姓名",
@@ -26,31 +63,73 @@ NON_NAME_WORDS = {
 }
 
 
+def compact_resume_text(text: str) -> str:
+    text = (text or "").replace("\u3000", " ")
+    text = re.sub(r"(?<=[\u4e00-\u9fa5])\s+(?=[\u4e00-\u9fa5])", "", text)
+    text = re.sub(r"(?<=[\u4e00-\u9fa5])\s*(?=[:：])", "", text)
+    text = re.sub(r"(?<=[:：])\s*(?=[\u4e00-\u9fa5A-Za-z0-9])", "", text)
+    text = re.sub(r"(?<=\d)\s+(?=岁)", "", text)
+    text = re.sub(r"\s+", " ", text)
+    return text
+
+
+def dense_resume_text(text: str) -> str:
+    return re.sub(r"\s+", "", text or "")
+
+
 def normalize_candidate_name(name: str) -> str:
     name = re.sub(r"\s+", "", name or "")
+    name = re.sub(r"(?:简历|个人简历|候选人|应聘)$", "", name)
+    mixed = re.match(r"^([\u4e00-\u9fa5]{2,4})[A-Za-z][A-Za-z0-9._-]*$", name)
+    if mixed:
+        name = mixed.group(1)
     if not re.fullmatch(r"[\u4e00-\u9fa5]{2,4}", name):
         return ""
     if name in SENDER_NAME_BLOCKLIST or name in NON_NAME_WORDS:
+        return ""
+    if any(suffix in name for suffix in NAME_SUFFIX_BLACKLIST):
+        return ""
+    if any(word in name for word in TITLE_HINT_WORDS):
         return ""
     return name
 
 
 def pick_name(text: str) -> str:
-    m = re.search(r"姓名[:：\s]+([\u4e00-\u9fa5]{2,8})", text)
+    normalized = compact_resume_text(text)
+    dense = dense_resume_text(text)
+    m = re.search(r"姓名[:：]?([\u4e00-\u9fa5\sA-Za-z]{2,20}?)(?=\s*(?:年龄|性别|电话|邮箱|出生|生日|求职意向|应聘岗位|现居住地|现所在地|籍贯|$))", normalized)
     if m:
         picked = normalize_candidate_name(m.group(1))
         if picked:
             return picked
-    compact = re.sub(r"\s+", " ", text)
+    m = re.search(r"姓名[:：]?([\u4e00-\u9fa5]{2,4})(?=(?:年龄|性别|电话|邮箱|出生|生日|求职意向|应聘岗位|现居住地|现所在地|籍贯|$))", dense)
+    if m:
+        picked = normalize_candidate_name(m.group(1))
+        if picked:
+            return picked
     patterns = [
-        r"(?:^|[|｜\s])([\u4e00-\u9fa5]{2,4})(?=\s*\d+年工作经验)",
-        r"(?:^|[|｜\s])([\u4e00-\u9fa5]{2,4})(?=\s*[男女]\b)",
-        r"(?:^|[|｜\s])([\u4e00-\u9fa5]{2,4})(?=\s*(?:求职意向|期望薪资|期望城市|年龄|籍贯))",
+        r"(?:^|[|｜\s])([\u4e00-\u9fa5]{2,4})(?=\s*(?:[|｜]\s*)?1[3-9]\d{9})",
+        r"(?:^|[|｜\s])([\u4e00-\u9fa5]{2,4})(?=\s*(?:[|｜]\s*)?\d+年工作经验)",
+        r"(?:^|[|｜\s])([\u4e00-\u9fa5]{2,4})(?=\s*(?:[|｜]\s*)?[男女A-Za-z])",
+        r"(?:^|[|｜\s])([\u4e00-\u9fa5]{2,4})(?=\s*(?:[|｜]\s*)?(?:求职意向|期望薪资|期望城市|年龄|籍贯))",
     ]
-    for pat in patterns:
-        m = re.search(pat, compact)
-        if m:
-            picked = normalize_candidate_name(m.group(1))
+    for variant in (normalized, dense):
+        for pat in patterns:
+            m = re.search(pat, variant)
+            if m:
+                picked = normalize_candidate_name(m.group(1))
+                if picked:
+                    return picked
+    raw_lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    normalized_lines = [re.sub(r"\s+", "", ln) for ln in raw_lines]
+    for i, ln in enumerate(normalized_lines[:6]):
+        if ln in NAME_CONTEXT_STOPWORDS:
+            continue
+        if any(word in ln for word in TITLE_HINT_WORDS):
+            continue
+        next_line = normalized_lines[i + 1] if i + 1 < len(normalized_lines) else ""
+        if re.search(r"(?:1[3-9]\d{9}|年龄|岁|求职意向|应聘岗位|邮箱|@)", next_line):
+            picked = normalize_candidate_name(ln)
             if picked:
                 return picked
     return ""
@@ -62,13 +141,14 @@ def pick_name_from_filename(pdf_path: str | None) -> str:
     stem = Path(pdf_path).stem
     stem = re.sub(r"^\[[^\]]+\]\s*", "", stem)
     stem = re.sub(r"^【[^】]+】\s*", "", stem)
-    parts = [p for p in re.split(r"[_\-\s]+", stem) if p]
+    stem = re.sub(r"(?:简历|个人简历|候选人简历|应聘简历)", " ", stem)
+    stem = re.sub(r"[（(【\[][^）)】\]]+[）)】\]]", " ", stem)
+    stem = re.sub(r"[_\-\s]+", " ", stem).strip()
     candidates: list[str] = []
-    if parts:
-        candidates.append(parts[0])
-    m = re.search(r"([\u4e00-\u9fa5]{2,4})", stem)
-    if m:
-        candidates.append(m.group(1))
+    for part in re.split(r"\s+", stem):
+        if part:
+            candidates.append(part)
+    candidates.extend(re.findall(r"[\u4e00-\u9fa5]{2,6}", stem))
     for cand in candidates:
         picked = normalize_candidate_name(cand)
         if picked:
@@ -95,20 +175,24 @@ def pick_contact(text: str) -> str:
 
 
 def pick_age(text: str) -> str:
-    m = re.search(r"年龄[:：\s]+(\d{2})", text)
-    if m:
-        return m.group(1)
-    m = re.search(r"(?<!\d)(\d{2})岁(?!\d)", text)
-    if m:
-        return m.group(1)
-    m = re.search(r"出生年月[:：\s]*(\d{4})\s*[年./-]\s*(\d{1,2})", text)
-    if m:
-        birth_year = int(m.group(1))
-        birth_month = int(m.group(2))
-        today = date.today()
-        age = today.year - birth_year - ((today.month, today.day) < (birth_month, 1))
-        if 16 <= age <= 80:
-            return str(age)
+    normalized = compact_resume_text(text)
+    dense = dense_resume_text(text)
+    for variant in (normalized, dense):
+        m = re.search(r"年龄[:：]?(\d{2})", variant)
+        if m:
+            return m.group(1)
+        m = re.search(r"(?<!\d)(\d{2})岁(?!\d)", variant)
+        if m:
+            return m.group(1)
+        m = re.search(r"(?:出生年月|出生日期|生日|出生)[:：]?(\d{4})[年./-]?(\d{1,2})(?:[月./-]?(\d{1,2}))?", variant)
+        if m:
+            birth_year = int(m.group(1))
+            birth_month = int(m.group(2))
+            birth_day = int(m.group(3) or 1)
+            today = date.today()
+            age = today.year - birth_year - ((today.month, today.day) < (birth_month, birth_day))
+            if 16 <= age <= 80:
+                return str(age)
     return ""
 
 
