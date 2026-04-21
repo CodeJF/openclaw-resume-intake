@@ -60,6 +60,8 @@ def main() -> int:
         "fields_preview": create_payload["fields"],
         "must_follow": [
             "Do not create a record when 应聘者姓名 is missing.",
+            "Use create_payload.fields exactly as generated for the create step. Do not rename 联系方式 to 手机 or 邮箱, and do not drop payload fields based on guesswork.",
+            "Only adjust a field after the Feishu tool explicitly reports a schema/type error and you have verified the real table schema.",
             "Upload the PDF as a Bitable attachment using parent_type=bitable_file and parent_node=<app_token>. Do not use a generic cloud-drive upload for this step.",
             "After feishu_drive_file.upload succeeds, use the returned file_token directly. Do not pause to grep logs or debug unless the upload tool itself returned an error.",
             "After record create + file upload succeed, immediately run guarded_attachment_update.py and then feishu_bitable_app_table_record.update.",

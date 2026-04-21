@@ -36,10 +36,12 @@ description: 用于固定简历录入流程的专用 skill：把收到的简历 
 1. 先确认这是不是简历录入任务，而不是通用的 Bitable 操作。
 2. 对 PDF 简历录入，默认走 **当前 skill 目录下** 的单入口脚本：`scripts/resume_intake_tool_plan.py`。
 3. 使用脚本产物里的 `fields.json` / `create_payload.json` 作为字段与写入参数的真相源，不要临时手工猜字段。
-4. 实际写入时，使用 OpenClaw 的一等飞书工具，不要直接走 tenant-token OpenAPI。
-5. 附件上传必须走多维表格附件模式，也就是 `feishu_drive_file.upload` 时传 `parent_type=bitable_file`，`parent_node=<app_token>`，不要先按普通云盘文件上传。
-6. 如果 `应聘者姓名` 缺失，直接停止创建并向用户说明需要人工确认，不允许创建无姓名记录。
-7. 除非脚本失败或字段明显缺失，否则不要切换到人工推导模式。
+4. **create 阶段必须原样使用 `create_payload.json` 里的 `fields` 对象。** 不要把 `联系方式` 擅自拆成 `手机` / `邮箱`，也不要因为主观猜测字段不存在就删除 payload 里已有字段。
+5. 只有在飞书工具明确返回字段不存在或类型不匹配，而且你已经先核对过真实 schema 时，才允许调整字段；否则一律按 payload 执行。
+6. 实际写入时，使用 OpenClaw 的一等飞书工具，不要直接走 tenant-token OpenAPI。
+7. 附件上传必须走多维表格附件模式，也就是 `feishu_drive_file.upload` 时传 `parent_type=bitable_file`，`parent_node=<app_token>`，不要先按普通云盘文件上传。
+8. 如果 `应聘者姓名` 缺失，直接停止创建并向用户说明需要人工确认，不允许创建无姓名记录。
+9. 除非脚本失败或字段明显缺失，否则不要切换到人工推导模式。
 
 ## 护栏
 
@@ -48,6 +50,8 @@ description: 用于固定简历录入流程的专用 skill：把收到的简历 
 - **不要把消息发送者姓名当作候选人姓名。** 候选人姓名只能来自简历文本或脚本抽取结果。
 - **不要为这个流程调用 `feishu_bitable_app_table_field.list` 做实时 schema 探索**，固定目标链路直接使用受保护脚本产物。
 - **不要手工拼接 create/update payload**，优先使用脚本生成的 payload。
+- **不要重命名脚本已生成的字段。** 例如 payload 中已有 `联系方式` 时，禁止改写成 `手机`、`邮箱` 或其他自造字段。
+- **不要因为一次失败就删除 payload 里的现有字段再重试**，除非飞书工具明确报该字段不存在/类型不匹配，且你已完成 schema 核对。
 - 上传工具一旦返回成功和 `file_token`，就直接进入附件回填，不要在用户对话里长时间 grep 日志、来回试探或做内联排查。
 - 如果附件回填报 `文件归属校验失败`、`token 不匹配`、或类似 bitable 附件归属错误，优先检查是不是误用了普通云盘上传；应改为 `parent_type=bitable_file` + `parent_node=<app_token>`，必要时只重传这一步，不要把问题暴露成一长串内部排查对话。
 - 结果判定规则：
