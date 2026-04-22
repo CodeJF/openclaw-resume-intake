@@ -1,0 +1,3 @@
+[submodule "skills/resume-intake-workflow"]
+	path = skills/resume-intake-workflow
+	url = git@github.com:CodeJF/resume-intake-skill.git
