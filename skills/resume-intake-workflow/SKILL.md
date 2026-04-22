@@ -1,6 +1,6 @@
 ---
 name: resume-intake-workflow
-description: 用于固定简历录入流程的专用 skill：把收到的简历 PDF 解析为保守的候选人字段，并为既定目标生成受保护的飞书写入计划。适用于这类场景：（1）接收或下载候选人 PDF 简历；（2）从 PDF 中提取文本；（3）把简历内容映射到批准的安全字段集合；（4）为固定目标生成飞书多维表格 create/update payload；（5）把原始 PDF 回填到已创建记录的附件字段；（6）检查某次简历录入写入是否符合业务护栏。这个 skill 是工作流能力，不是 agent 身份定义。不要用于通用 Bitable 探索，也不要在未明确确认前用于创建新的业务目标。
+description: 用于固定简历录入流程的专用 skill：当用户发送单份候选人 PDF 简历、发送包含多份 PDF 的 ZIP 批量简历包、或明确要求把简历录入既定飞书多维表格时，使用本 skill。它负责把简历解析为保守的候选人字段，并为既定目标生成受保护的飞书写入计划。适用于这类场景：（1）接收或下载候选人 PDF 简历；（2）接收包含多份 PDF 的 ZIP 并执行批量 intake；（3）从 PDF 中提取文本；（4）把简历内容映射到批准的安全字段集合；（5）为固定目标生成飞书多维表格 create/update payload；（6）把原始 PDF 回填到已创建记录的附件字段；（7）检查某次简历录入写入是否符合业务护栏。若用户明确要求“不要录入，只做分析 / 对比 / 评估”，不要使用本 skill 进入录入链路。这个 skill 是工作流能力，不是 agent 身份定义。不要用于通用 Bitable 探索，也不要在未明确确认前用于创建新的业务目标。
 ---
 
 # 简历录入工作流
@@ -11,7 +11,9 @@ description: 用于固定简历录入流程的专用 skill：把收到的简历 
 
 默认路径要尽量收敛，只使用已经批准的目标和安全字段。如果目标、数据表、字段映射存在歧义，先停下来确认，不要猜。
 
-这个 skill 应该承载生产规则本身。`AGENTS.md` 只负责轻量分流和最小护栏，不要把姓名提取、年龄规则、附件上传参数之类的细节再维护一份到 agent 规则里。
+固定目标默认使用 `target_key = resume_intake_v1`，目标真相源是 `references/targets.json`。
+
+这个 skill 应该承载生产规则本身。workspace 级 `AGENTS.md` 只保留很薄的项目定位与入口指引，不要把姓名提取、年龄规则、附件上传参数之类的细节再维护一份到 agent 规则里。
 
 **路径规则：本文件里出现的相对路径，全部相对于当前 skill 目录解析。**
 也就是说：
@@ -49,22 +51,12 @@ description: 用于固定简历录入流程的专用 skill：把收到的简历 
 ## 护栏
 
 - 除非用户明确要求注册新目标或切换目标，否则只使用固定业务目标。
-- 不得编造候选人数据；不确定的字段留空。
-- **不要把消息发送者姓名当作候选人姓名。** 候选人姓名只能来自简历文本或脚本抽取结果。
+- 默认 `target_key = resume_intake_v1`，并以 `references/targets.json` 作为目标真相源。
 - **不要为这个流程调用 `feishu_bitable_app_table_field.list` 做实时 schema 探索**，固定目标链路直接使用受保护脚本产物。
-- **不要手工拼接 create/update payload**，优先使用脚本生成的 payload。
-- **不要重命名脚本已生成的字段。** 例如 payload 中已有 `联系方式` 时，禁止改写成 `手机`、`邮箱` 或其他自造字段。
-- **不要因为一次失败就删除 payload 里的现有字段再重试**，除非飞书工具明确报该字段不存在/类型不匹配，且你已完成 schema 核对。
-- 上传工具一旦返回成功和 `file_token`，就直接进入附件回填，不要在用户对话里长时间 grep 日志、来回试探或做内联排查。
-- 如果附件回填报 `文件归属校验失败`、`token 不匹配`、或类似 bitable 附件归属错误，优先检查是不是误用了普通云盘上传；应改为 `parent_type=bitable_file` + `parent_node=<app_token>`，必要时只重传这一步，不要把问题暴露成一长串内部排查对话。
-- 结果判定规则：
-  - 字段创建成功 + 附件更新成功 => 完整成功
-  - 字段创建成功 + 附件更新失败 => 部分成功
-  - 字段创建失败 => 失败
-- 如果 ZIP 批量运行里出现类似 `base:record:create`、`offline_access`、`当前应用仅限所有者使用` 之类此前单 PDF 并不稳定复现的权限报错，先检查是不是错误地把 Feishu 写入放进了 subagent，而不是立刻假定开放平台权限真的缺失。
-- 如果 ZIP 批量运行被中断，优先查看 `jobs/<job_id>/checkpoint.json`；存在 checkpoint 且没有 `result.json` 时，必须按 checkpoint 续跑，禁止从头重复 create 造成重复记录。
 - 在固定链路里，只允许对批准目标执行记录 `create` 和附件字段 `update`。
 - 不要把这个 skill 用于生产链路中的泛化表发现、广义搜索或 schema 探索。
+- 姓名来源、payload 使用约束、成功/部分成功判定等业务规则，读取 `references/business-rules.md`。
+- ZIP 权限报错、附件归属报错、checkpoint 续跑等批量执行细节，读取 `references/batch-execution.md`。
 
 ## 什么时候读什么
 
@@ -85,20 +77,16 @@ description: 用于固定简历录入流程的专用 skill：把收到的简历 
 
 优先使用本地脚本产出稳定工件。
 
-单 PDF：
+单 PDF 常见工件：
 - `resume.txt`
 - `fields.json`
 - `create_payload.json`
 - `tool_plan.json`
 
-ZIP 批量：
+ZIP 批量常见工件：
 - `batch_plan.json`
 - `batch_result.json`
-- `jobs/job-xxx/resume.txt`
-- `jobs/job-xxx/fields.json`
-- `jobs/job-xxx/create_payload.json`
-- `jobs/job-xxx/tool_plan.json`
-- `jobs/job-xxx/result.json`
+- `jobs/job-xxx/...`
 
 推荐工作目录模式：
 
@@ -114,29 +102,14 @@ runtime/inbound/<message_id>/
 - `feishu_drive_file.upload`（附件模式：`parent_type=bitable_file`，`parent_node=app_token`）
 - `feishu_bitable_app_table_record.update`
 
-ZIP 批量模式下：
-- 先运行 `scripts/batch_resume_intake.py` 生成 `batch_plan.json`
-- 再按 `batch_plan.json.items[*].plan` 分 job 执行 create / upload / attachment update
-- 默认并发度控制在 2 到 3
-- **不要把 create / upload / update 这三个 Feishu 写入步骤放到 subagent、isolated session、或脱离原始 Feishu 对话上下文的子任务里执行。**
-- 如果为了提速需要拆分任务，子任务只允许做本地规划与文件工件生成，不允许直接调用 `feishu_bitable_app_table_record.create`、`feishu_drive_file.upload`、`feishu_bitable_app_table_record.update`。
-- 真正的 Feishu 写入必须由收到用户消息的主会话执行，这样才能稳定复用当前用户的授权上下文。
-- create 成功后，立刻用 `scripts/job_checkpoint.py` 写 `jobs/<job_id>/checkpoint.json`，至少落下 `stage=created` 和 `record_id`
-- upload 成功后，再次用 `scripts/job_checkpoint.py` 更新 `checkpoint.json`，至少落下 `stage=uploaded` 和 `file_token`
-- 每个 job 完成后，用 `scripts/record_job_result.py` 写入 `jobs/<job_id>/result.json`
-- 所有 job 完成后，运行 `scripts/summarize_batch_results.py` 生成 `batch_result.json`
-- 只有拿到 `batch_result.json` 后，才给用户发最终汇总
-- 对用户默认只回 1 条汇总；必要时最多加 1 条简短“处理中”
+ZIP 批量模式下，先生成 `batch_plan.json`，再按 plan 执行 create / upload / attachment update。
+
+- 完整批量执行顺序、并发建议、checkpoint、result.json、batch_result.json，读取 `references/batch-execution.md`。
+- 对用户的批量汇总口径，也以 `references/batch-execution.md` 为准。
 
 ### 3）对用户反馈
 
 - 默认只在流程结束后回复一次。
-- 完整成功：一句话说明已录入成功。
-- 部分成功：一句话说明记录已创建，但附件失败。
-- 失败：一句话说明失败点。
-- ZIP 批量模式优先回复聚合结果，例如“已处理 5 份，成功 4 份，部分成功 1 份”。
-- 禁止在同一条简历录入会话里连续发送多条“开始录入”“开始写入”“继续修复”之类的过程消息。
-- 禁止发送“pypdf 未安装”“现在保存文本”“现在执行写入”“附件需要绑定到 bitable，重新上传”这类过程废话。
 - 如果姓名或年龄因 PDF 字符间距、OCR 断裂而抽取异常，先重跑当前 skill 自带脚本的稳健提取逻辑；只有脚本仍拿不准时，才进入人工确认。
 - 除非用户要求详情，否则不要附长表格、长清单、长过程说明。
 

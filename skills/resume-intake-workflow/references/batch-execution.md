@@ -2,11 +2,21 @@
 
 这份说明只回答一件事：**agent 拿到 ZIP 后，如何把 `batch_plan.json` 真正执行成多份录入结果。**
 
+## 目录
+
+- 适用入口
+- 总体原则
+- 执行顺序
+- 常见故障的优先判断
+- 中断后的续跑规则
+- 回复用户的建议格式
+- 不要做的事
+
 ## 适用入口
 
 - 用户发送 **单个 ZIP**
 - ZIP 内含多份 PDF 简历
-- 默认目标：`resume_intake_v1`
+- 默认目标：`resume_intake_v1`（目标注册表见 `references/targets.json`）
 
 ## 总体原则
 
@@ -106,6 +116,32 @@ python3 scripts/record_job_result.py \
 - create 成功 + 附件失败 => `partial`
 - create 失败 => `failed`
 
+## 常见故障的优先判断
+
+### 权限类报错
+
+如果 ZIP 批量运行里出现类似以下报错：
+- `base:record:create`
+- `offline_access`
+- `当前应用仅限所有者使用`
+
+先检查是不是错误地把 Feishu 写入放进了 subagent / isolated session，或放进了脱离原始 Feishu 用户授权上下文的子任务。
+
+不要在第一反应里就假定开放平台权限真的缺失。
+
+### 附件归属类报错
+
+如果附件回填报以下类型错误：
+- `文件归属校验失败`
+- `token 不匹配`
+- 类似 bitable 附件归属错误
+
+优先检查是不是误用了普通云盘上传。应改为：
+- `parent_type=bitable_file`
+- `parent_node=<app_token>`
+
+必要时只重传 upload + attachment update 这一步，不要把问题扩散成整条链路重跑。
+
 ## 中断后的续跑规则
 
 - 如果会话中断，但 `jobs/<job_id>/checkpoint.json` 已存在且没有 `result.json`，则该 job 视为**可续跑**。
@@ -125,6 +161,12 @@ python3 scripts/summarize_batch_results.py --work-dir runtime/inbound/<message_i
 - `batch_result.json`
 
 ## 回复用户的建议格式
+
+- 默认只发 1 条最终汇总。
+- 只有确实耗时较长时，才额外发 1 条简短“处理中”。
+- 不要在同一条简历录入会话里连续发送多条过程消息。
+- 不要发送“pypdf 未安装”“现在保存文本”“现在执行写入”“附件需要绑定到 bitable，重新上传”这类过程废话。
+
 
 ### 简短汇总
 
